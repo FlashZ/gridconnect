@@ -2,6 +2,8 @@
 
 GridConnect is a small, local-first dashboard for Tuya-derived smart plugs, including compatible Arlec Grid Connect devices sold in Australia and New Zealand. It polls plugs directly over the LAN, stores energy history in SQLite, provides local on/off control and schedules, and estimates plug energy costs without Home Assistant or an ongoing cloud subscription.
 
+![The GridConnect dashboard: live load and cost tiles, a sustained-load alert on an EV charger, a 24-hour energy chart, and per-plug readings with load bars against each plug's watt limit.](docs/dashboard.png)
+
 The device integration is built on the open-source [TinyTuya](https://github.com/jasonacox/tinytuya) Python library. TinyTuya provides the local Tuya LAN communication and Tuya Cloud setup calls used for device polling, control, protocol detection, and credential import. This project adds the Docker service, SQLite history, tariff calculations, automations, monitoring APIs, and browser dashboard around it.
 
 This is an independent community project. It is not affiliated with or endorsed by Arlec,
