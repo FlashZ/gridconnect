@@ -40,6 +40,33 @@ from .services import (
 
 STATIC = Path(__file__).parent / "static"
 
+DEFAULT_PROJECT_URL = "https://github.com/FlashZ/gridconnect"
+DEFAULT_SUPPORT_URL = "https://buymeacoffee.com/nickkb"
+
+
+def _safe_url(value: str) -> str:
+    """Allow only http(s) links. These end up as hrefs in the dashboard footer."""
+    value = (value or "").strip()
+    return value if value.startswith(("http://", "https://")) else ""
+
+
+def about_links() -> dict:
+    """Footer identity, overridable so a fork points at its own project and funding."""
+    project = _safe_url(os.getenv("GRIDCONNECT_PROJECT_URL", DEFAULT_PROJECT_URL))
+    licence = _safe_url(
+        os.getenv("GRIDCONNECT_LICENSE_URL")
+        or (f"{project.rstrip('/')}/blob/main/LICENSE" if project else "")
+    )
+    return {
+        "name": os.getenv("GRIDCONNECT_PROJECT_NAME", "GridConnect").strip()[:60] or "GridConnect",
+        "version": VERSION,
+        "project_url": project,
+        "license_url": licence,
+        # A fork sets this to an empty string to drop the link entirely, rather
+        # than soliciting on the upstream author's behalf.
+        "support_url": _safe_url(os.getenv("GRIDCONNECT_SUPPORT_URL", DEFAULT_SUPPORT_URL)),
+    }
+
 
 def describe(exc: Exception) -> str:
     """Render an exception for the UI. Several, notably TimeoutError, stringify empty."""
@@ -309,6 +336,12 @@ def widget_summary():
         "currency": config["currency"],
         **health(),
     }
+
+
+@app.get("/api/about")
+def about():
+    """Project identity for the dashboard footer. Configurable so forks can rebrand."""
+    return about_links()
 
 
 @app.get("/api/settings")

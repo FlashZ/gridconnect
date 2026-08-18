@@ -1212,30 +1212,7 @@
           </div>
         </div>
 
-        <footer class="about">
-          <span id="aboutVersion">GridConnect</span>
-          <span class="dot">·</span>
-          <a
-            href="https://github.com/FlashZ/gridconnect"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Source &amp; issues</a
-          >
-          <span class="dot">·</span>
-          <a
-            href="https://github.com/FlashZ/gridconnect/blob/main/LICENSE"
-            target="_blank"
-            rel="noopener noreferrer"
-            >MIT licence</a
-          >
-          <span class="dot">·</span>
-          <a
-            href="https://buymeacoffee.com/nickkb"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Buy me a coffee</a
-          >
-        </footer>
+        <footer class="about" id="about"></footer>
       </section>
     </main>
 
@@ -2080,7 +2057,7 @@
             loadSettings(),
             loadDeviceAdmin(),
             loadAutomationHistory(),
-            loadVersion(),
+            loadAbout(),
           ]);
         } else if (trendRows.length) {
           draw(trendRows);
@@ -2134,16 +2111,32 @@
         }));
       }
 
-      /* Report the running build, so a bug report can name a version. */
-      async function loadVersion() {
+      /* Report the running build and the project's own links, so a bug report can
+         name a version and a fork points at its own repository rather than upstream. */
+      async function loadAbout() {
+        const footer = $("#about");
+        let about;
         try {
-          const health = await api("health");
-          $("#aboutVersion").textContent = health.version
-            ? `GridConnect v${health.version}`
-            : "GridConnect";
+          about = await api("about");
         } catch {
-          $("#aboutVersion").textContent = "GridConnect";
+          footer.innerHTML = '<span class="muted">GridConnect</span>';
+          return;
         }
+        const parts = [
+          `<span>${esc(about.name || "GridConnect")}${about.version ? ` v${esc(about.version)}` : ""}</span>`,
+        ];
+        const links = [
+          [about.project_url, "Source &amp; issues"],
+          [about.license_url, "Licence"],
+          [about.support_url, "Buy me a coffee"],
+        ];
+        for (const [url, label] of links) {
+          if (!url) continue;
+          parts.push(
+            `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`,
+          );
+        }
+        footer.innerHTML = parts.join('<span class="dot">·</span>');
       }
 
       async function loadSettings() {

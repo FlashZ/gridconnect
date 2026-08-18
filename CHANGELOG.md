@@ -64,6 +64,9 @@ so that the app, the container, the database and the environment variables all a
 - `tests/test_api.py` covering the HTTP contract the dashboard depends on.
 - An About footer in Settings showing the running version, source, licence and a
   support link. Text links only, so an offline LAN install makes no outbound request.
+- `GET /api/about`, with `GRIDCONNECT_PROJECT_NAME`/`_URL`, `_LICENSE_URL` and
+  `_SUPPORT_URL` overrides, so a fork points the footer at its own project and funding
+  rather than upstream. Only http(s) values are accepted.
 
 ### Changed
 

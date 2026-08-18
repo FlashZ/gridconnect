@@ -294,6 +294,22 @@ For peak/off-peak pricing, enter periods as JSON. Days use Monday `0` through Su
 
 Overnight periods are supported. Tariff calculations use the configured IANA timezone, such as `Pacific/Auckland` or `Australia/Sydney`.
 
+## Rebranding a fork
+
+The Settings footer shows the running version and the project's links. They are read
+from the environment, so a fork can point them at its own repository and funding rather
+than upstream. Set any value to an empty string to drop that link.
+
+| Variable                   | Default                                     |
+| -------------------------- | ------------------------------------------- |
+| `GRIDCONNECT_PROJECT_NAME` | `GridConnect`                               |
+| `GRIDCONNECT_PROJECT_URL`  | this repository                             |
+| `GRIDCONNECT_LICENSE_URL`  | `<project url>/blob/main/LICENSE`           |
+| `GRIDCONNECT_SUPPORT_URL`  | the upstream author's Buy Me a Coffee page  |
+
+Only `http://` and `https://` values are accepted; anything else is discarded, since
+these are rendered as links in the dashboard. `GET /api/about` returns the resolved set.
+
 ## Alerts
 
 GridConnect raises alerts on the dashboard and keeps them open until the condition clears.
@@ -363,6 +379,7 @@ Database migrations are forward-only and run automatically at startup.
 | `POST /api/devices/{id}/dps`  | Read a plug's raw DPS channels for mapping       |
 | `POST /api/devices/{id}/test` | Force an immediate poll and store the reading    |
 | `POST /api/maintenance/check-budgets` | Re-evaluate budget alerts now            |
+| `GET /api/about`           | Project name, version and footer links               |
 
 For Uptime Kuma, monitor `http://HOST-IP:8080/api/health`. HTTP `200` means the service and database are available; inspect the JSON `status` field if device degradation should generate a separate alert.
 

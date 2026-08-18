@@ -164,3 +164,32 @@ def test_static_assets_the_pwa_needs_are_served(client):
     assert client.get("/manifest.webmanifest").status_code == 200
     assert client.get("/icon.svg").status_code == 200
     assert client.get("/sw.js").status_code == 200
+
+
+def test_about_uses_project_defaults(client):
+    body = client.get("/api/about").json()
+    assert body["name"] == "GridConnect"
+    assert body["version"]
+    assert body["project_url"] == "https://github.com/FlashZ/gridconnect"
+    assert body["license_url"].endswith("/blob/main/LICENSE")
+    assert body["support_url"].startswith("https://")
+
+
+def test_about_can_be_rebranded_by_a_fork(client, monkeypatch):
+    monkeypatch.setenv("GRIDCONNECT_PROJECT_NAME", "PlugWatch")
+    monkeypatch.setenv("GRIDCONNECT_PROJECT_URL", "https://example.org/plugwatch")
+    monkeypatch.setenv("GRIDCONNECT_SUPPORT_URL", "")
+    body = client.get("/api/about").json()
+    assert body["name"] == "PlugWatch"
+    assert body["project_url"] == "https://example.org/plugwatch"
+    assert body["license_url"] == "https://example.org/plugwatch/blob/main/LICENSE"
+    assert body["support_url"] == "", "a fork must be able to drop the support link"
+
+
+def test_about_rejects_a_non_http_url(client, monkeypatch):
+    """These values are rendered as hrefs, so only http(s) may survive."""
+    monkeypatch.setenv("GRIDCONNECT_PROJECT_URL", "javascript:alert(1)")
+    monkeypatch.setenv("GRIDCONNECT_SUPPORT_URL", "data:text/html,<script>1</script>")
+    body = client.get("/api/about").json()
+    assert body["project_url"] == ""
+    assert body["support_url"] == ""
