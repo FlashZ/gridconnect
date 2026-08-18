@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check app tests host-relay.py
+      - run: ruff format --check app tests host-relay.py
+      - run: pytest -q
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t gridconnect:ci .
+      - name: Smoke-test the image
+        run: |
+          docker run -d --name gridconnect-ci -p 8080:8080 gridconnect:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/api/health; then exit 0; fi
+            sleep 2
+          done
+          echo "health endpoint never came up"; docker logs gridconnect-ci; exit 1

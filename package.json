@@ -1,0 +1,13 @@
+{
+  "name": "gridconnect-ui",
+  "private": true,
+  "scripts": {
+    "lint": "node scripts/lint-ui.mjs",
+    "format": "prettier --write app/static/index.html app/static/sw.js scripts/lint-ui.mjs",
+    "format:check": "prettier --check app/static/index.html app/static/sw.js scripts/lint-ui.mjs"
+  },
+  "devDependencies": {
+    "eslint": "9.33.0",
+    "prettier": "3.6.2"
+  }
+}

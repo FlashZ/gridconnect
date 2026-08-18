@@ -1,0 +1,35 @@
+services:
+  gridconnect:
+    build: .
+    image: gridconnect:1.0.0
+    container_name: gridconnect
+    restart: unless-stopped
+    # Use `host` where a Docker bridge cannot reach LAN-only Tuya devices.
+    # Docker Desktop requires its opt-in host-networking setting to be enabled first.
+    network_mode: ${GRIDCONNECT_NETWORK_MODE:-bridge}
+    ports:
+      - "${GRIDCONNECT_PORT:-8080}:8080"
+    volumes:
+      - ./data:/data
+    # Lets a container reach a relay running on the Docker host by name. Docker
+    # Desktop provides host.docker.internal already; on Linux this adds it.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Set this to your local zone so tariff times and schedules are correct.
+      GRIDCONNECT_TIMEZONE: ${GRIDCONNECT_TIMEZONE:-Pacific/Auckland}
+      GRIDCONNECT_DB: /data/gridconnect.db
+      # Optional browser password: set GRIDCONNECT_AUTH_PASSWORD in .env.
+      GRIDCONNECT_AUTH_PASSWORD: ${GRIDCONNECT_AUTH_PASSWORD:-}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/api/health',timeout=5).status==200 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3

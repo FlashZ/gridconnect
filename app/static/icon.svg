@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GridConnect">
+  <rect width="512" height="512" rx="112" fill="#07191e"/>
+  <path d="M256 92 150 286h84l-26 134 134-206h-88z" fill="#54e2b0"/>
+  <g stroke="#54e2b0" stroke-width="14" stroke-linecap="round" opacity=".45" fill="none">
+    <path d="M96 168h40M96 256h28M96 344h40M376 168h40M388 256h28M376 344h40"/>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+{
+  "name": "GridConnect",
+  "short_name": "GridConnect",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07191e",
+  "theme_color": "#07191e",
+  "description": "Local monitoring, control and tariff-aware energy costs for Tuya smart plugs.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

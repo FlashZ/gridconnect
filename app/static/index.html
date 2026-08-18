@@ -1,0 +1,2589 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#07191e" />
+    <meta
+      name="description"
+      content="Local monitoring, control and tariff-aware energy costs for Tuya smart plugs."
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <title>GridConnect</title>
+    <style>
+      :root {
+        --ink: #edf4f5;
+        --muted: #9cacb0;
+        --line: #294148;
+        --card: #0b242bdf;
+        --panel: #0a2026;
+        --bg: #07191e;
+        --glow: #174c4b;
+        --accent: #54e2b0;
+        --accent-ink: #062119;
+        --danger: #ff8373;
+        --danger-ink: #2b0d09;
+        --warning: #ffc857;
+        --focus: #7fd7ff;
+        --shadow: 0 18px 40px -24px #000c;
+      }
+      @media (prefers-color-scheme: light) {
+        :root:not([data-theme="dark"]) {
+          --ink: #0d2229;
+          --muted: #4d6870;
+          --line: #cbdde0;
+          --card: #ffffff;
+          --panel: #f2f7f8;
+          --bg: #e9f1f2;
+          --glow: #cfe9e4;
+          --accent: #0d7a5b;
+          --accent-ink: #ffffff;
+          --danger: #b3261e;
+          --danger-ink: #ffffff;
+          --warning: #8a5a00;
+          --focus: #005b8f;
+          --shadow: 0 14px 32px -26px #0a2a3355;
+        }
+      }
+      :root[data-theme="light"] {
+        --ink: #0d2229;
+        --muted: #4d6870;
+        --line: #cbdde0;
+        --card: #ffffff;
+        --panel: #f2f7f8;
+        --bg: #e9f1f2;
+        --glow: #cfe9e4;
+        --accent: #0d7a5b;
+        --accent-ink: #ffffff;
+        --danger: #b3261e;
+        --danger-ink: #ffffff;
+        --warning: #8a5a00;
+        --focus: #005b8f;
+        --shadow: 0 14px 32px -26px #0a2a3355;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        background-image: radial-gradient(
+          circle at 80% -20%,
+          var(--glow),
+          var(--bg) 45%
+        );
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+      main {
+        max-width: 1180px;
+        margin: auto;
+        padding: 24px 20px 64px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 30px);
+        letter-spacing: -0.01em;
+      }
+      h2 {
+        font-size: 17px;
+        margin: 26px 0 12px;
+      }
+      h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+      .sub,
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .sub {
+        margin: 5px 0 0;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+      .value {
+        font-size: clamp(20px, 3.4vw, 27px);
+        font-weight: 700;
+        color: var(--accent);
+        margin-top: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .value .unit {
+        font-size: 0.6em;
+        font-weight: 600;
+        color: var(--muted);
+        margin-left: 2px;
+      }
+      .value .secondary-value {
+        display: block;
+        font-size: 0.58em;
+        color: var(--ink);
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* ---------- controls ---------- */
+      button {
+        border: 1px solid transparent;
+        border-radius: 9px;
+        padding: 10px 13px;
+        min-height: 44px;
+        background: var(--accent);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        color: var(--accent-ink);
+      }
+      button.secondary {
+        background: var(--panel);
+        color: var(--ink);
+        border-color: var(--line);
+      }
+      button.secondary.active {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-color: transparent;
+      }
+      button.danger {
+        background: var(--danger);
+        color: var(--danger-ink);
+      }
+      button.ghost {
+        background: transparent;
+        color: var(--ink);
+        border-color: var(--line);
+      }
+      button.small {
+        padding: 6px 10px;
+        min-height: 36px;
+        font-size: 13px;
+      }
+      button[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      :is(button, a, input, select, textarea, summary):focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+      .button-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      form {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        align-items: end;
+      }
+      label {
+        display: grid;
+        gap: 5px;
+        font-size: 13px;
+        color: var(--muted);
+        min-width: 0;
+      }
+      /* Any direct child of a form grid can span the full row, not just labels. */
+      .wide {
+        grid-column: 1 / -1;
+      }
+      label.inline {
+        grid-auto-flow: column;
+        justify-content: start;
+        align-items: center;
+        gap: 9px;
+      }
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: var(--ink);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 10px;
+        min-height: 44px;
+        width: 100%;
+        max-width: 100%;
+      }
+      input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        min-height: 22px;
+        accent-color: var(--accent);
+      }
+      textarea {
+        min-height: 84px;
+        font-family: ui-monospace, monospace;
+        font-size: 13px;
+      }
+      fieldset {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px 12px;
+        margin: 0;
+        min-width: 0;
+      }
+      legend {
+        font-size: 13px;
+        color: var(--muted);
+        padding: 0 6px;
+      }
+
+      /* ---------- pills / status ---------- */
+      .pill {
+        display: inline-block;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .pill.live {
+        border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+        color: var(--accent);
+      }
+      .pill.bad {
+        border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+        color: var(--danger);
+      }
+      .pill.warn {
+        border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+        color: var(--warning);
+      }
+      .online {
+        color: var(--accent);
+      }
+      .offline {
+        color: var(--danger);
+      }
+      .warning {
+        color: var(--warning);
+      }
+      .dot {
+        color: var(--muted);
+        padding: 0 2px;
+      }
+
+      /* ---------- devices ---------- */
+      .device {
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 10px 0;
+        padding: 14px;
+        border-radius: 11px;
+        background: var(--panel);
+        border: 1px solid transparent;
+      }
+      .device.is-offline {
+        border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+      }
+      .device-info {
+        min-width: 0;
+        flex: 1 1 260px;
+      }
+      .device-name {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-weight: 700;
+      }
+      .device-info .muted {
+        line-height: 1.5;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+      }
+      .reading {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        flex-wrap: wrap;
+        margin-top: 6px;
+      }
+      .reading b {
+        font-size: 19px;
+        font-variant-numeric: tabular-nums;
+      }
+      .load-bar {
+        margin-top: 8px;
+        height: 7px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--line) 70%, transparent);
+        overflow: hidden;
+        max-width: 320px;
+      }
+      .load-bar span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+      .load-bar span.warn {
+        background: var(--warning);
+      }
+      .load-bar span.over {
+        background: var(--danger);
+      }
+      .power-buttons {
+        display: flex;
+        gap: 8px;
+      }
+      .power-buttons button {
+        min-width: 66px;
+      }
+      .power-buttons button.off-active {
+        background: var(--danger);
+        color: var(--danger-ink);
+        border-color: transparent;
+      }
+
+      /* ---------- alerts ---------- */
+      .alert {
+        display: flex;
+        gap: 14px;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 12px 14px;
+        border-radius: 11px;
+        background: var(--panel);
+        border-left: 4px solid var(--warning);
+        margin: 9px 0;
+      }
+      .alert.sev-critical {
+        border-left-color: var(--danger);
+      }
+      .alert.sev-info {
+        border-left-color: var(--accent);
+      }
+      .alert-body {
+        min-width: 0;
+        flex: 1 1 280px;
+      }
+      .alert-body .muted {
+        overflow-wrap: anywhere;
+      }
+
+      /* ---------- chart ---------- */
+      .chart-tools {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .chart-tools .spacer {
+        flex: 1 1 auto;
+      }
+      .chart-tools select {
+        width: auto;
+        min-width: 140px;
+        max-width: 220px;
+      }
+      .chart-wrap {
+        position: relative;
+      }
+      canvas {
+        width: 100%;
+        height: 240px;
+        display: block;
+        touch-action: pan-y;
+      }
+      .chart-tooltip {
+        position: absolute;
+        display: none;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 8px 10px;
+        font-size: 12.5px;
+        pointer-events: none;
+        box-shadow: var(--shadow);
+        max-width: 220px;
+        z-index: 3;
+      }
+      .chart-empty {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        min-height: 240px;
+        color: var(--muted);
+        padding: 20px;
+      }
+      .chart-empty b {
+        color: var(--ink);
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      /* ---------- tables ---------- */
+      .table-scroll {
+        overflow-x: auto;
+        margin-top: 12px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        min-width: 460px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-size: 12.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      /* ---------- dialogs / toasts ---------- */
+      dialog {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--card);
+        color: var(--ink);
+        padding: 20px;
+        width: min(880px, 94vw);
+        box-shadow: var(--shadow);
+      }
+      dialog::backdrop {
+        background: #000a;
+        backdrop-filter: blur(2px);
+      }
+      dialog h2 {
+        margin-top: 0;
+      }
+      #toasts {
+        position: fixed;
+        inset: auto 16px 16px auto;
+        display: grid;
+        gap: 8px;
+        z-index: 50;
+        max-width: min(380px, calc(100vw - 32px));
+      }
+      .toast {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 10px;
+        padding: 11px 13px;
+        box-shadow: var(--shadow);
+        font-size: 14px;
+        overflow-wrap: anywhere;
+      }
+      .toast.error {
+        border-left-color: var(--danger);
+      }
+      .toast.warn {
+        border-left-color: var(--warning);
+      }
+      .banner {
+        border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+        background: color-mix(in srgb, var(--danger) 10%, var(--card));
+        border-radius: 11px;
+        padding: 11px 14px;
+        margin-bottom: 14px;
+        font-size: 14px;
+      }
+
+      /* ---------- weekday chips ---------- */
+      .days {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .days input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+      }
+      .days label {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        min-height: 40px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        color: var(--ink);
+        background: var(--panel);
+        font-size: 13px;
+        user-select: none;
+      }
+      .days input:checked + span {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .days span {
+        display: block;
+        border-radius: 999px;
+        padding: 8px 12px;
+        min-width: 44px;
+        text-align: center;
+      }
+      .days label:focus-within {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      /* ---------- dps inspector ---------- */
+      .dps-value {
+        font-family: ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+      .subnav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .danger-zone {
+        border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 18px 14px 60px;
+        }
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .grid .card {
+          padding: 13px;
+        }
+        form {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .power-buttons {
+          width: 100%;
+        }
+        .power-buttons button {
+          flex: 1;
+        }
+        /* Touch targets stay at the 44px guideline on small screens. */
+        button.small {
+          min-height: 44px;
+          padding: 9px 13px;
+        }
+        .days span {
+          min-height: 44px;
+          display: grid;
+          place-items: center;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>GridConnect</h1>
+          <p class="sub">
+            Local control, energy history and tariff-aware costs for your smart
+            plugs.
+          </p>
+        </div>
+        <div class="button-row">
+          <span id="freshness" class="pill" role="status" aria-live="polite"
+            >Connecting…</span
+          >
+          <button
+            id="themeToggle"
+            class="secondary small"
+            type="button"
+            onclick="cycleTheme()"
+            aria-label="Change colour theme"
+          >
+            Theme
+          </button>
+          <nav class="button-row" aria-label="Main navigation">
+            <button
+              id="dashboardTab"
+              class="secondary active"
+              type="button"
+              onclick="showView('dashboard')"
+            >
+              Dashboard</button
+            ><button
+              id="settingsTab"
+              class="secondary"
+              type="button"
+              onclick="showView('settings')"
+            >
+              Settings &amp; devices
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      <div id="connectionBanner" class="banner hidden" role="alert"></div>
+
+      <section id="dashboardView">
+        <div class="grid">
+          <div class="card">
+            <div class="label">Live load</div>
+            <div class="value" id="watts">—</div>
+            <div class="muted" id="wattsNote">Plugs reporting now</div>
+          </div>
+          <div class="card">
+            <div class="label">Today</div>
+            <div class="value" id="today">—</div>
+          </div>
+          <div class="card">
+            <div class="label">This week</div>
+            <div class="value" id="week">—</div>
+          </div>
+          <div class="card">
+            <div class="label">This month</div>
+            <div class="value" id="month">—</div>
+          </div>
+        </div>
+
+        <section id="alertsSection" class="hidden">
+          <h2>Needs attention</h2>
+          <div class="card"><div id="alerts"></div></div>
+        </section>
+
+        <section>
+          <h2>Energy &amp; power</h2>
+          <div class="card">
+            <div class="chart-tools" aria-label="Chart controls">
+              <div class="button-row" role="group" aria-label="Metric">
+                <button
+                  id="metricEnergy"
+                  class="secondary small active"
+                  type="button"
+                  onclick="setMetric('kwh')"
+                >
+                  Energy</button
+                ><button
+                  id="metricPower"
+                  class="secondary small"
+                  type="button"
+                  onclick="setMetric('watts')"
+                >
+                  Power
+                </button>
+              </div>
+              <div class="button-row" role="group" aria-label="Time range">
+                <button
+                  class="secondary small active"
+                  type="button"
+                  data-hours="24"
+                  onclick="setTrendHours(24)"
+                >
+                  24 hours</button
+                ><button
+                  class="secondary small"
+                  type="button"
+                  data-hours="168"
+                  onclick="setTrendHours(168)"
+                >
+                  7 days</button
+                ><button
+                  class="secondary small"
+                  type="button"
+                  data-hours="720"
+                  onclick="setTrendHours(720)"
+                >
+                  30 days
+                </button>
+              </div>
+              <select
+                id="trendBucket"
+                aria-label="Aggregation"
+                onchange="setTrendBucket(this.value)"
+              >
+                <option value="auto">Auto detail</option>
+                <option value="minute15">15-minute</option>
+                <option value="hour">Hourly</option>
+                <option value="day">Daily</option>
+              </select>
+              <select
+                id="trendDevice"
+                aria-label="Plug"
+                onchange="setTrendDevice(this.value)"
+              ></select>
+              <span class="spacer"></span>
+              <button
+                class="secondary small"
+                type="button"
+                onclick="exportTrends()"
+              >
+                Download CSV
+              </button>
+            </div>
+            <div class="chart-wrap">
+              <canvas
+                id="trend"
+                role="img"
+                aria-label="Energy-use chart"
+              ></canvas>
+              <div id="chartEmpty" class="chart-empty hidden"></div>
+              <div id="trendTooltip" class="chart-tooltip" role="status"></div>
+            </div>
+            <p class="muted" id="trendStatus"></p>
+            <details>
+              <summary class="muted">View chart data as a table</summary>
+              <div class="table-scroll" id="trendTable"></div>
+            </details>
+          </div>
+        </section>
+
+        <section>
+          <h2>Plugs</h2>
+          <div class="card"><div id="devices">Loading…</div></div>
+        </section>
+
+        <section>
+          <h2>One-off timers</h2>
+          <div class="card">
+            <form id="timerForm">
+              <label
+                >Plug<select
+                  name="device_id"
+                  id="timerDevice"
+                  required
+                ></select></label
+              ><label
+                >Run at<input
+                  name="run_at"
+                  type="datetime-local"
+                  required /></label
+              ><label
+                >Action<select name="action">
+                  <option value="off">Turn off</option>
+                  <option value="on">Turn on</option>
+                </select></label
+              ><label
+                >Optional label<input
+                  name="label"
+                  maxlength="120"
+                  placeholder="e.g. Heater safety cutoff"
+              /></label>
+              <button>Add one-off timer</button>
+            </form>
+            <div id="timers" class="muted"></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="settingsBox" class="hidden">
+        <div class="subnav" role="tablist" aria-label="Settings sections">
+          <button
+            class="secondary small active"
+            type="button"
+            role="tab"
+            data-panel="panel-general"
+            onclick="showPanel('panel-general')"
+          >
+            General &amp; tariff</button
+          ><button
+            class="secondary small"
+            type="button"
+            role="tab"
+            data-panel="panel-plugs"
+            onclick="showPanel('panel-plugs')"
+          >
+            Plugs</button
+          ><button
+            class="secondary small"
+            type="button"
+            role="tab"
+            data-panel="panel-automation"
+            onclick="showPanel('panel-automation')"
+          >
+            Automation</button
+          ><button
+            class="secondary small"
+            type="button"
+            role="tab"
+            data-panel="panel-data"
+            onclick="showPanel('panel-data')"
+          >
+            Data &amp; backup
+          </button>
+        </div>
+
+        <div id="panel-general" class="settings-panel">
+          <h2>General &amp; tariff</h2>
+          <div class="card">
+            <form id="settingsForm">
+              <label
+                >Poll every (seconds)<input
+                  name="poll_interval_seconds"
+                  type="number"
+                  min="3"
+                  max="3600"
+                  required /></label
+              ><label
+                >Currency<input
+                  name="currency"
+                  maxlength="3"
+                  pattern="[A-Za-z]{3}"
+                  required /></label
+              ><label
+                >Timezone<input name="timezone" list="timezones" required />
+                <datalist id="timezones"></datalist></label
+              ><label
+                >Tariff type<select
+                  name="tariff_mode"
+                  onchange="syncTariffMode()"
+                >
+                  <option value="flat">Flat rate</option>
+                  <option value="time_of_use">Peak / off-peak</option>
+                </select></label
+              ><label
+                >Flat tariff (c/kWh)<input
+                  name="flat_rate_cents"
+                  type="number"
+                  step="0.01"
+                  min="0" /></label
+              ><label class="inline"
+                ><input name="gst_included" type="checkbox" /> Prices include
+                GST</label
+              >
+
+              <fieldset class="wide" id="touFieldset">
+                <legend>Peak / off-peak periods</legend>
+                <div id="touRows"></div>
+                <div class="button-row" style="margin-top: 10px">
+                  <button
+                    class="secondary small"
+                    type="button"
+                    onclick="addTouRow()"
+                  >
+                    Add period
+                  </button>
+                </div>
+              </fieldset>
+
+              <fieldset class="wide">
+                <legend>Alerts</legend>
+                <div
+                  style="
+                    display: grid;
+                    gap: 12px;
+                    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+                  "
+                >
+                  <label class="inline"
+                    ><input name="alerts_enabled" type="checkbox" /> Enable
+                    alerts</label
+                  ><label
+                    >Offline alert after (minutes)<input
+                      name="alert_offline_minutes"
+                      type="number"
+                      min="0"
+                      max="10080" /></label
+                  ><label
+                    >Sustained-load window (minutes)<input
+                      name="sustained_load_minutes"
+                      type="number"
+                      min="0"
+                      max="1440" /></label
+                  ><label
+                    >Sustained-load threshold (% of limit)<input
+                      name="sustained_load_percent"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1" /></label
+                  ><label
+                    >Nominal supply voltage (V)<input
+                      name="nominal_voltage"
+                      type="number"
+                      min="0"
+                      max="600"
+                      step="1" /></label
+                  ><label
+                    >Voltage tolerance (%)<input
+                      name="voltage_tolerance_percent"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                  /></label>
+                </div>
+                <p class="muted" style="margin-bottom: 0">
+                  A sustained-load alert fires when a plug stays above the
+                  chosen share of its own watt limit for the whole window — the
+                  pattern that overheats a plug run near its rating for hours.
+                </p>
+              </fieldset>
+              <button>Save settings</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="panel-plugs" class="settings-panel hidden">
+          <h2>Your plugs</h2>
+          <div class="card"><div id="deviceAdmin">Loading…</div></div>
+
+          <h2>Import from a Tuya / Grid Connect account</h2>
+          <div class="card">
+            <p class="muted" style="margin-top: 0">
+              Credentials are used for this request only and are never written
+              to the database.
+            </p>
+            <form id="cloudForm">
+              <label
+                >Tuya region<select name="api_region">
+                  <option value="us">US</option>
+                  <option value="us-e">US East</option>
+                  <option value="eu">EU</option>
+                  <option value="eu-w">EU West</option>
+                  <option value="cn">China</option>
+                  <option value="sg">Singapore</option>
+                  <option value="in">India</option>
+                </select></label
+              ><label>Cloud Access ID<input name="api_key" required /></label
+              ><label
+                >Cloud Access Secret<input
+                  name="api_secret"
+                  type="password"
+                  autocomplete="off"
+                  required /></label
+              ><label
+                >Optional linked device ID<input name="api_device_id"
+              /></label>
+              <button>Find linked devices</button>
+            </form>
+            <div id="cloudResults" class="muted" style="margin-top: 13px"></div>
+          </div>
+
+          <h2>Add a plug manually</h2>
+          <div class="card">
+            <form id="deviceForm">
+              <label
+                >Name<input
+                  name="name"
+                  required
+                  placeholder="Office heater" /></label
+              ><label
+                >LAN IP / relay host<input
+                  name="ip_address"
+                  required
+                  placeholder="192.168.1.42" /></label
+              ><label
+                >Tuya device ID<input name="tuya_device_id" required /></label
+              ><label>Local key<input name="local_key" required /></label
+              ><label
+                >Protocol<select name="protocol_version">
+                  <option value="">Detect automatically</option>
+                  <option>3.1</option>
+                  <option>3.2</option>
+                  <option>3.3</option>
+                  <option>3.4</option>
+                  <option>3.5</option>
+                </select></label
+              ><label
+                >Tuya TCP port<input
+                  name="tuya_port"
+                  value="6668"
+                  type="number"
+                  min="1"
+                  max="65535"
+              /></label>
+              <fieldset class="wide">
+                <legend>Metering channels (defaults suit most plugs)</legend>
+                <div
+                  style="
+                    display: grid;
+                    gap: 12px;
+                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                  "
+                >
+                  <label>Switch DPS<input name="switch_dps" value="1" /></label
+                  ><label>Watts DPS<input name="watts_dps" value="19" /></label
+                  ><label
+                    >Voltage DPS<input name="voltage_dps" value="20" /></label
+                  ><label
+                    >Current DPS<input name="current_dps" value="18" /></label
+                  ><label
+                    >Energy DPS<input name="energy_dps" value="17" /></label
+                  ><label
+                    >Watts scale<input
+                      name="power_scale"
+                      value="0.1"
+                      type="number"
+                      step="any" /></label
+                  ><label
+                    >Voltage scale<input
+                      name="voltage_scale"
+                      value="0.1"
+                      type="number"
+                      step="any" /></label
+                  ><label
+                    >Current scale<input
+                      name="current_scale"
+                      value="0.001"
+                      type="number"
+                      step="any" /></label
+                  ><label
+                    >Energy scale<input
+                      name="energy_scale"
+                      value="0.01"
+                      type="number"
+                      step="any"
+                  /></label>
+                </div>
+                <p class="muted" style="margin-bottom: 0">
+                  Not sure? Add the plug with the defaults, then use
+                  <b>Inspect channels</b> on it to see its live values and
+                  correct the mapping.
+                </p>
+              </fieldset>
+              <button>Add plug</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="panel-automation" class="settings-panel hidden">
+          <h2>Weekly schedules</h2>
+          <div class="card">
+            <form id="scheduleForm">
+              <label
+                >Plug<select
+                  name="device_id"
+                  id="scheduleDevice"
+                  required
+                ></select></label
+              ><label>Time<input name="at_time" type="time" required /></label
+              ><label
+                >Action<select name="action">
+                  <option value="on">Turn on</option>
+                  <option value="off">Turn off</option>
+                </select></label
+              >
+              <fieldset class="wide">
+                <legend>Days</legend>
+                <div class="days" id="scheduleDays"></div>
+              </fieldset>
+              <button>Add schedule</button>
+            </form>
+            <div id="schedules"></div>
+          </div>
+
+          <h2>Automation history</h2>
+          <div class="card">
+            <div id="automationHistory" class="muted">
+              No automation attempts recorded yet.
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-data" class="settings-panel hidden">
+          <h2>History &amp; retention</h2>
+          <div class="card">
+            <form id="retentionForm">
+              <label
+                >Raw sample retention (days)<input
+                  name="raw_retention_days"
+                  type="number"
+                  min="1"
+                  max="3650"
+              /></label>
+              <button>Save retention</button>
+            </form>
+            <p class="muted">
+              Raw samples are rolled into hourly totals before removal, so
+              long-term history and costs are kept.
+            </p>
+            <div class="button-row">
+              <button
+                class="secondary"
+                type="button"
+                onclick="archiveHistory()"
+              >
+                Run retention roll-up now</button
+              ><a href="/api/backup"
+                ><button class="secondary" type="button">
+                  Download SQLite backup
+                </button></a
+              >
+            </div>
+          </div>
+
+          <h2>Restore</h2>
+          <div class="card danger-zone">
+            <p class="muted" style="margin-top: 0">
+              Restoring replaces every setting, plug, schedule and reading in
+              this instance. Take a backup first.
+            </p>
+            <div class="button-row">
+              <label style="flex: 1 1 240px"
+                >Backup file<input id="restoreFile" type="file" accept=".db"
+              /></label>
+              <button class="danger" type="button" onclick="restoreBackup()">
+                Restore database
+              </button>
+            </div>
+          </div>
+
+          <h2>Access protection</h2>
+          <div class="card">
+            <p class="muted" style="margin: 0">
+              To require a browser password, set
+              <code>GRIDCONNECT_AUTH_PASSWORD</code> in the server's
+              <code>.env</code> and restart the container. Leave it unset for
+              trusted-LAN access. The <code>/api/health</code> endpoint stays
+              public so uptime monitors keep working.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+    <dialog id="deviceDialog">
+      <h2>Edit plug</h2>
+      <form id="deviceEditForm">
+        <input name="id" type="hidden" />
+        <label>Name<input name="name" required /></label
+        ><label>LAN IP / relay host<input name="ip_address" required /></label
+        ><label>Tuya device ID<input name="tuya_device_id" required /></label
+        ><label
+          >Local key (leave blank to keep)<input
+            name="local_key"
+            type="password"
+            autocomplete="new-password" /></label
+        ><label
+          >Protocol<select name="protocol_version">
+            <option>3.1</option>
+            <option>3.2</option>
+            <option>3.3</option>
+            <option>3.4</option>
+            <option>3.5</option>
+          </select></label
+        ><label
+          >TCP port<input name="tuya_port" type="number" min="1" max="65535"
+        /></label>
+        <fieldset class="wide">
+          <legend>Metering channels</legend>
+          <div
+            style="
+              display: grid;
+              gap: 12px;
+              grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            "
+          >
+            <label>Switch DPS<input name="switch_dps" /></label
+            ><label>Watts DPS<input name="watts_dps" /></label
+            ><label>Voltage DPS<input name="voltage_dps" /></label
+            ><label>Current DPS<input name="current_dps" /></label
+            ><label>Energy DPS<input name="energy_dps" /></label
+            ><label
+              >Watts scale<input
+                name="power_scale"
+                type="number"
+                step="any" /></label
+            ><label
+              >Voltage scale<input
+                name="voltage_scale"
+                type="number"
+                step="any" /></label
+            ><label
+              >Current scale<input
+                name="current_scale"
+                type="number"
+                step="any" /></label
+            ><label
+              >Energy scale<input name="energy_scale" type="number" step="any"
+            /></label>
+          </div>
+          <div class="button-row" style="margin-top: 10px">
+            <button
+              class="secondary small"
+              type="button"
+              onclick="inspectDps(+deviceEditForm.elements.id.value)"
+            >
+              Inspect live channels
+            </button>
+          </div>
+        </fieldset>
+        <label
+          >Monthly budget (cents)<input
+            name="monthly_budget_cents"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="No budget" /></label
+        ><label
+          >Watt limit for alerts<input
+            name="max_watts"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="No limit" /></label
+        ><label
+          >Enabled<select name="enabled">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+          </select></label
+        >
+        <div class="button-row wide">
+          <button>Save changes</button
+          ><button
+            type="button"
+            class="secondary"
+            onclick="deviceDialog.close()"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dpsDialog">
+      <h2>Live DPS channels</h2>
+      <p class="muted" id="dpsIntro">
+        These are the raw values the plug is reporting right now. Match each
+        metering channel to the value that looks right, then apply the mapping.
+      </p>
+      <div class="table-scroll" id="dpsTable"></div>
+      <div class="button-row" style="margin-top: 16px">
+        <button type="button" onclick="applyDpsMapping()">Apply mapping</button
+        ><button type="button" class="secondary" onclick="dpsDialog.close()">
+          Close
+        </button>
+      </div>
+    </dialog>
+
+    <dialog id="confirmDialog">
+      <h2 id="confirmTitle">Are you sure?</h2>
+      <p id="confirmBody" class="muted"></p>
+      <form method="dialog">
+        <label class="wide" id="confirmPhraseLabel"
+          >Type <b><span id="confirmPhrase"></span></b> to continue<input
+            id="confirmInput"
+            autocomplete="off"
+        /></label>
+        <div class="button-row wide">
+          <button id="confirmOk" value="ok" class="danger">Confirm</button
+          ><button value="cancel" class="secondary">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script>
+      const $ = (s) => document.querySelector(s);
+      const REQUEST_TIMEOUT = 15000;
+      // Talking to a plug over Wi-Fi (or a relay) is allowed 30s server-side, so
+      // these calls must not be abandoned by the browser before the server replies.
+      const SLOW_TIMEOUT = 40000;
+      const SLOW_PATHS = [
+        "/dps",
+        "/test",
+        "setup/detect-protocol",
+        "setup/cloud-devices",
+      ];
+
+      async function api(path, options = {}) {
+        const controller = new AbortController();
+        const budget = SLOW_PATHS.some((slow) => path.includes(slow))
+          ? SLOW_TIMEOUT
+          : REQUEST_TIMEOUT;
+        const timer = setTimeout(() => controller.abort(), budget);
+        try {
+          const response = await fetch("/api/" + path, {
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            ...options,
+          });
+          if (!response.ok) throw Error(await readError(response));
+          return await response.json();
+        } catch (error) {
+          if (error.name === "AbortError")
+            throw Error(`Timed out after ${Math.round(budget / 1000)}s`);
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      async function readError(response) {
+        const text = await response.text();
+        try {
+          const parsed = JSON.parse(text);
+          const detail = parsed.detail;
+          if (typeof detail === "string") return detail;
+          if (Array.isArray(detail))
+            return detail
+              .map((d) => `${(d.loc || []).slice(1).join(".")}: ${d.msg}`)
+              .join("; ");
+        } catch {
+          /* fall through to the raw body */
+        }
+        return text || `Request failed (${response.status})`;
+      }
+
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const fmt = (n, d = 1) => Number(n ?? 0).toFixed(d);
+      const ago = (t) => (t ? new Date(t).toLocaleString() : "Never");
+      const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+      function relative(t) {
+        if (!t) return "never";
+        const seconds = Math.round((Date.now() - new Date(t).getTime()) / 1000);
+        if (seconds < 5) return "just now";
+        if (seconds < 90) return `${seconds}s ago`;
+        if (seconds < 5400) return `${Math.round(seconds / 60)} min ago`;
+        if (seconds < 172800) return `${Math.round(seconds / 3600)} h ago`;
+        return `${Math.round(seconds / 86400)} d ago`;
+      }
+
+      let devices = [],
+        deviceConfigs = [],
+        currency = "NZD",
+        settingsCache = null,
+        pendingPower = new Map(),
+        trendHours = 24,
+        trendBucket = "auto",
+        trendDevice = "",
+        trendMetric = "kwh",
+        trendRows = [],
+        trendPoints = [],
+        refreshTimer = 0,
+        consecutiveFailures = 0,
+        dpsContext = null;
+
+      function money(n) {
+        try {
+          return new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency,
+          }).format(n || 0);
+        } catch {
+          return `${currency} ${Number(n || 0).toFixed(2)}`;
+        }
+      }
+
+      /* ---------------- toasts & dialogs ---------------- */
+      function toast(message, kind = "info", ms = 5000) {
+        const node = document.createElement("div");
+        node.className = `toast ${kind}`;
+        node.textContent = message;
+        $("#toasts").append(node);
+        setTimeout(() => node.remove(), ms);
+      }
+
+      function confirmAction({ title, body, phrase = "" }) {
+        const dialog = $("#confirmDialog");
+        $("#confirmTitle").textContent = title;
+        $("#confirmBody").textContent = body || "";
+        $("#confirmPhrase").textContent = phrase;
+        $("#confirmPhraseLabel").classList.toggle("hidden", !phrase);
+        $("#confirmInput").value = "";
+        dialog.showModal();
+        return new Promise((resolve) => {
+          dialog.addEventListener(
+            "close",
+            () => {
+              const ok =
+                dialog.returnValue === "ok" &&
+                (!phrase || $("#confirmInput").value.trim() === phrase);
+              if (dialog.returnValue === "ok" && !ok)
+                toast(`Type ${phrase} exactly to confirm.`, "warn");
+              resolve(ok);
+            },
+            { once: true },
+          );
+        });
+      }
+
+      /* ---------------- theme ---------------- */
+      function applyTheme(mode) {
+        if (mode === "system")
+          document.documentElement.removeAttribute("data-theme");
+        else document.documentElement.setAttribute("data-theme", mode);
+        $("#themeToggle").textContent =
+          mode === "system" ? "Theme: auto" : `Theme: ${mode}`;
+      }
+      function cycleTheme() {
+        const order = ["system", "light", "dark"];
+        const current = localStorage.getItem("gc-theme") || "system";
+        const next = order[(order.indexOf(current) + 1) % order.length];
+        localStorage.setItem("gc-theme", next);
+        applyTheme(next);
+        if (trendRows.length) draw(trendRows);
+      }
+      applyTheme(localStorage.getItem("gc-theme") || "system");
+
+      /* ---------------- alert presentation ---------------- */
+      const ALERT_LABELS = {
+        offline: { text: "Offline", severity: "critical" },
+        high_watts: { text: "Over watt limit", severity: "critical" },
+        sustained_load: { text: "Sustained heavy load", severity: "critical" },
+        voltage: { text: "Unexpected voltage", severity: "warn" },
+        budget: { text: "Budget reached", severity: "warn" },
+        schedule: { text: "Schedule failed", severity: "warn" },
+        timer: { text: "Timer failed", severity: "warn" },
+      };
+      function alertMeta(kind) {
+        if (ALERT_LABELS[kind]) return ALERT_LABELS[kind];
+        if (String(kind).startsWith("internal_"))
+          return { text: "Service problem", severity: "critical" };
+        return { text: String(kind).replace(/_/g, " "), severity: "warn" };
+      }
+
+      /* ---------------- rendering ---------------- */
+      function use(u) {
+        return `${(+u.kwh || 0).toFixed(2)} kWh · ${money(u.energy_cost)}`;
+      }
+
+      function loadBar(device) {
+        if (!device.max_watts || device.watts == null || device.reading_stale)
+          return "";
+        const share = Math.min(1, device.watts / device.max_watts);
+        const cls = share >= 1 ? "over" : share >= 0.8 ? "warn" : "";
+        return `<div class="load-bar" title="${fmt(device.watts)} W of ${device.max_watts} W limit"><span class="${cls}" style="width:${(share * 100).toFixed(1)}%"></span></div>`;
+      }
+
+      function renderDevices() {
+        const box = $("#devices");
+        if (!devices.length) {
+          box.innerHTML =
+            '<p class="muted">No plugs added yet. Add one under <b>Settings &amp; devices</b>.</p>';
+          return;
+        }
+        box.innerHTML = devices
+          .map((d) => {
+            const pending = pendingPower.get(d.id);
+            const on = pending
+              ? pending.state
+              : d.is_on === 1 || d.is_on === true;
+            const unknown = d.is_on == null;
+            const status = pending
+              ? on
+                ? "Switching on…"
+                : "Switching off…"
+              : unknown
+                ? "State unknown"
+                : on
+                  ? "On"
+                  : "Off";
+            // An offline or stale plug is not drawing what it last reported, so its
+            // reading is shown dimmed and labelled rather than as a live figure.
+            const stale = d.reading_stale || !d.online;
+            const reading =
+              d.watts == null
+                ? '<b class="muted">—</b>'
+                : `<b class="${stale ? "muted" : ""}">${fmt(d.watts)}<span class="label"> W</span></b>${stale ? '<span class="pill warn">Last known</span>' : ""}`;
+            const extras = [
+              d.voltage == null ? "" : `${fmt(d.voltage)} V`,
+              d.amps == null ? "" : `${fmt(d.amps, 2)} A`,
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            return `<div class="device ${d.online ? "" : "is-offline"}">
+              <div class="device-info">
+                <div class="device-name">${esc(d.name)}
+                  <span class="pill ${d.online ? "live" : "bad"}">${d.online ? "Online" : "Offline"}</span>
+                  <span class="pill">${status}</span>
+                  ${d.enabled ? "" : '<span class="pill">Disabled</span>'}
+                </div>
+                <div class="reading">${reading}${extras ? `<span class="muted">${extras}</span>` : ""}</div>
+                ${loadBar(d)}
+                <div class="muted">Today ${use(d.usage?.today || {})} <span class="dot">|</span> Week ${use(d.usage?.week || {})} <span class="dot">|</span> Month ${use(d.usage?.month || {})}${d.monthly_budget_cents != null ? ` <span class="dot">|</span> Budget ${money(d.monthly_budget_cents / 100)}` : ""}</div>
+                <div class="muted">Last reading ${relative(d.last_seen)} <span class="dot">·</span> ${esc(d.ip_address)}:${d.tuya_port} <span class="dot">·</span> Tuya ${d.protocol_version}${!d.online && d.last_error ? ` <span class="dot">·</span> <span class="offline">${esc(d.last_error)}</span>` : ""}</div>
+                <div class="button-row" style="margin-top:8px">
+                  <button class="secondary small" type="button" onclick="testDevice(${d.id})">Test connection</button>
+                  <button class="secondary small" type="button" onclick="openEditById(${d.id})">Edit</button>
+                </div>
+              </div>
+              <div class="power-buttons">
+                <button class="secondary ${on && !unknown ? "active" : ""}" type="button" ${pending || !d.enabled ? "disabled" : ""} aria-pressed="${!unknown && on}" onclick="power(${d.id},true)">On</button>
+                <button class="secondary ${!unknown && !on ? "off-active" : ""}" type="button" ${pending || !d.enabled ? "disabled" : ""} aria-pressed="${!unknown && !on}" onclick="power(${d.id},false)">Off</button>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+
+      function renderAlerts(alerts) {
+        $("#alertsSection").classList.toggle("hidden", !alerts.length);
+        $("#alerts").innerHTML = alerts
+          .map((a) => {
+            const meta = alertMeta(a.kind);
+            return `<div class="alert sev-${meta.severity}">
+              <div class="alert-body">
+                <b>${esc(a.device_name || "GridConnect")} · ${esc(meta.text)}</b>
+                <div class="muted">${esc(a.message)}</div>
+                <div class="muted">${relative(a.created_at)} · ${ago(a.created_at)}</div>
+              </div>
+              <button class="secondary small" type="button" onclick="resolveAlert(${a.id})">Dismiss</button>
+            </div>`;
+          })
+          .join("");
+      }
+
+      /* Keep the user's choice when the option list is rebuilt on each refresh. */
+      function fillSelect(select, options, { keepValue = true } = {}) {
+        const previous = select.value;
+        select.innerHTML = options;
+        if (
+          keepValue &&
+          previous &&
+          select.querySelector(`option[value="${CSS.escape(previous)}"]`)
+        )
+          select.value = previous;
+      }
+
+      function syncDeviceSelects() {
+        fillSelect(
+          $("#trendDevice"),
+          '<option value="">All plugs</option>' +
+            devices
+              .map((d) => `<option value="${d.id}">${esc(d.name)}</option>`)
+              .join(""),
+        );
+        $("#trendDevice").value = trendDevice;
+        const active = devices
+          .filter((d) => d.enabled)
+          .map((d) => `<option value="${d.id}">${esc(d.name)}</option>`)
+          .join("");
+        fillSelect($("#timerDevice"), active);
+        fillSelect($("#scheduleDevice"), active);
+      }
+
+      function renderUsageCard(id, period) {
+        $(id).innerHTML =
+          `${(+period.kwh || 0).toFixed(2)}<span class="unit">kWh</span><span class="secondary-value">${money(period.energy_cost)}</span>`;
+      }
+
+      function setConnectionError(message) {
+        const banner = $("#connectionBanner");
+        banner.classList.toggle("hidden", !message);
+        if (message) banner.textContent = message;
+      }
+
+      /* ---------------- data refresh ---------------- */
+      async function refresh() {
+        clearTimeout(refreshTimer);
+        if (document.hidden) {
+          refreshTimer = setTimeout(refresh, 5000);
+          return;
+        }
+        try {
+          const [overview, chart] = await Promise.all([
+            api("overview"),
+            api(
+              `trends?hours=${trendHours}&bucket=${trendBucket}${trendDevice ? "&device_id=" + trendDevice : ""}`,
+            ),
+          ]);
+          currency = overview.currency;
+          devices = overview.devices;
+          const reporting = devices.filter(
+            (d) => d.online && !d.reading_stale,
+          ).length;
+          $("#watts").innerHTML =
+            `${fmt(overview.live_watts)}<span class="unit">W</span>`;
+          $("#wattsNote").textContent = reporting
+            ? `${reporting} of ${devices.length} plug${devices.length === 1 ? "" : "s"} reporting`
+            : "No plugs reporting right now";
+          renderUsageCard("#today", overview.today);
+          renderUsageCard("#week", overview.week);
+          renderUsageCard("#month", overview.month);
+          renderDevices();
+          renderAlerts(overview.alerts);
+          syncDeviceSelects();
+          draw(chart);
+          $("#freshness").textContent =
+            `Updated ${new Date().toLocaleTimeString()}`;
+          $("#freshness").className = "pill live";
+          consecutiveFailures = 0;
+          setConnectionError("");
+          await Promise.all([loadTimers(), loadSchedules()]);
+        } catch (e) {
+          consecutiveFailures += 1;
+          $("#freshness").textContent =
+            `Reconnecting… (${consecutiveFailures})`;
+          $("#freshness").className = "pill bad";
+          // Leave the last good dashboard on screen rather than blanking it.
+          setConnectionError(
+            `Could not reach GridConnect: ${e.message || e}. Showing the last known values and retrying.`,
+          );
+        } finally {
+          const delay = Math.min(
+            30000,
+            5000 * Math.max(1, consecutiveFailures),
+          );
+          refreshTimer = setTimeout(refresh, delay);
+        }
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) refresh();
+      });
+
+      async function power(id, state) {
+        if (pendingPower.has(id)) return;
+        pendingPower.set(id, { state });
+        renderDevices();
+        try {
+          await api(`devices/${id}/power?state=${state}`, { method: "POST" });
+          const d = devices.find((x) => x.id === id);
+          if (d) d.is_on = state;
+          toast(`${d ? d.name : "Plug"} switched ${state ? "on" : "off"}.`);
+          setTimeout(refresh, 700);
+        } catch (e) {
+          toast(`Could not switch plug: ${e.message}`, "error", 8000);
+        } finally {
+          pendingPower.delete(id);
+          renderDevices();
+        }
+      }
+
+      async function testDevice(id) {
+        const device = devices.find((x) => x.id === id);
+        try {
+          const result = await api(`devices/${id}/test`, { method: "POST" });
+          toast(
+            `${device ? device.name : "Plug"} replied in ${result.response_ms} ms · ${fmt(result.reading.watts)} W`,
+          );
+          refresh();
+        } catch (e) {
+          toast(`Connection test failed: ${e.message}`, "error", 9000);
+        }
+      }
+
+      async function resolveAlert(id) {
+        try {
+          await api(`alerts/${id}/resolve`, { method: "POST" });
+          refresh();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      /* ---------------- chart ---------------- */
+      function setMetric(metric) {
+        trendMetric = metric;
+        $("#metricEnergy").classList.toggle("active", metric === "kwh");
+        $("#metricPower").classList.toggle("active", metric === "watts");
+        draw(trendRows);
+      }
+      function setTrendHours(n) {
+        trendHours = n;
+        document
+          .querySelectorAll("[data-hours]")
+          .forEach((b) => b.classList.toggle("active", +b.dataset.hours === n));
+        refresh();
+      }
+      function setTrendBucket(v) {
+        trendBucket = v;
+        refresh();
+      }
+      function setTrendDevice(v) {
+        trendDevice = v;
+        refresh();
+      }
+      function exportTrends() {
+        location = `/api/trends.csv?hours=${trendHours}&bucket=${trendBucket}${trendDevice ? "&device_id=" + trendDevice : ""}`;
+      }
+      function bucketName() {
+        return {
+          auto: "Auto detail",
+          minute15: "15-minute",
+          hour: "Hourly",
+          day: "Daily",
+        }[trendBucket];
+      }
+      function themeColor(name) {
+        return getComputedStyle(document.documentElement)
+          .getPropertyValue(name)
+          .trim();
+      }
+      function niceMax(value) {
+        if (value <= 0) return 1;
+        const magnitude = 10 ** Math.floor(Math.log10(value));
+        const step = [1, 2, 2.5, 5, 10].find((s) => value <= s * magnitude);
+        return step * magnitude;
+      }
+      function labelFor(bucket) {
+        const date = new Date(bucket);
+        if (trendHours <= 24)
+          return date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        if (trendHours <= 168)
+          return date.toLocaleDateString([], {
+            weekday: "short",
+            hour: "2-digit",
+          });
+        return date.toLocaleDateString([], { day: "numeric", month: "short" });
+      }
+
+      function draw(rows) {
+        trendRows = rows || [];
+        const canvas = $("#trend");
+        const empty = $("#chartEmpty");
+        const values = trendRows.map((r) =>
+          trendMetric === "kwh" ? +r.kwh || 0 : +r.avg_watts || 0,
+        );
+        const peak = Math.max(...values, 0);
+        renderTrendTable();
+
+        if (!trendRows.length || peak === 0) {
+          canvas.classList.add("hidden");
+          empty.classList.remove("hidden");
+          empty.innerHTML = !trendRows.length
+            ? "<div><b>No history yet for this range</b>Readings appear once a plug has been polled successfully.</div>"
+            : `<div><b>Every reading in this range is zero</b>${trendMetric === "kwh" ? "No energy was recorded." : "No power draw was recorded."} If a load really is connected, the plug's metering channels are probably mapped to the wrong DPS — use <b>Inspect live channels</b> on the plug to check.</div>`;
+          $("#trendStatus").textContent =
+            `${bucketName()} · waiting for a non-zero reading`;
+          return;
+        }
+        canvas.classList.remove("hidden");
+        empty.classList.add("hidden");
+
+        const ctx = canvas.getContext("2d");
+        const scale = Math.min(3, window.devicePixelRatio || 1);
+        const width = (canvas.width = Math.max(1, canvas.clientWidth) * scale);
+        const height = (canvas.height = 240 * scale);
+        const padLeft = 58 * scale,
+          padRight = 14 * scale,
+          padTop = 14 * scale,
+          padBottom = 30 * scale;
+        const plotW = width - padLeft - padRight;
+        const plotH = height - padTop - padBottom;
+        const max = niceMax(peak);
+        const ink = themeColor("--muted") || "#9cacb0";
+        const line = themeColor("--line") || "#294148";
+        const accent = themeColor("--accent") || "#54e2b0";
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.font = `${12 * scale}px system-ui`;
+        ctx.strokeStyle = line;
+        ctx.lineWidth = scale;
+        ctx.fillStyle = ink;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        const unit = trendMetric === "kwh" ? " kWh" : " W";
+        for (let i = 0; i <= 4; i++) {
+          const y = padTop + plotH - (i / 4) * plotH;
+          ctx.beginPath();
+          ctx.moveTo(padLeft, y);
+          ctx.lineTo(width - padRight, y);
+          ctx.stroke();
+          const v = (max * i) / 4;
+          ctx.fillText(
+            (trendMetric === "kwh" ? v.toFixed(2) : Math.round(v)) + unit,
+            padLeft - 7 * scale,
+            y,
+          );
+        }
+
+        trendPoints = values.map((v, i) => ({
+          x:
+            padLeft +
+            (values.length === 1
+              ? plotW / 2
+              : (i / (values.length - 1)) * plotW),
+          y: padTop + plotH - (v / max) * plotH,
+        }));
+
+        ctx.beginPath();
+        trendPoints.forEach((p, i) =>
+          i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y),
+        );
+        ctx.lineTo(trendPoints.at(-1).x, padTop + plotH);
+        ctx.lineTo(trendPoints[0].x, padTop + plotH);
+        ctx.closePath();
+        ctx.fillStyle = accent + "33";
+        ctx.fill();
+
+        ctx.beginPath();
+        trendPoints.forEach((p, i) =>
+          i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y),
+        );
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2 * scale;
+        ctx.stroke();
+
+        // X axis: a handful of readable ticks rather than none at all.
+        ctx.fillStyle = ink;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        const ticks = Math.max(
+          2,
+          Math.min(6, Math.floor(plotW / (90 * scale))),
+        );
+        for (let i = 0; i <= ticks; i++) {
+          const index = Math.round((i / ticks) * (trendRows.length - 1));
+          const point = trendPoints[index];
+          if (!point) continue;
+          ctx.fillText(
+            labelFor(trendRows[index].bucket),
+            Math.min(width - padRight, Math.max(padLeft, point.x)),
+            padTop + plotH + 9 * scale,
+          );
+        }
+
+        const total = trendRows.reduce((n, r) => n + (+r.kwh || 0), 0);
+        $("#trendStatus").textContent =
+          `${bucketName()} · ${trendDevice ? "selected plug" : "all plugs"} · ${total.toFixed(2)} kWh over the range · peak ${trendMetric === "kwh" ? peak.toFixed(3) + " kWh per bucket" : Math.round(peak) + " W average"}`;
+      }
+
+      function renderTrendTable() {
+        if (!trendRows.length) {
+          $("#trendTable").innerHTML = '<p class="muted">No data.</p>';
+          return;
+        }
+        $("#trendTable").innerHTML =
+          "<table><caption class='muted'>Chart data</caption><tr><th>Bucket</th><th>Energy (kWh)</th><th>Average power (W)</th><th>Samples</th></tr>" +
+          trendRows
+            .map(
+              (r) =>
+                `<tr><td>${esc(new Date(r.bucket).toLocaleString())}</td><td>${(+r.kwh).toFixed(3)}</td><td>${r.avg_watts == null ? "—" : fmt(r.avg_watts)}</td><td>${r.samples}</td></tr>`,
+            )
+            .join("") +
+          "</table>";
+      }
+
+      $("#trend").addEventListener("pointermove", (e) => {
+        if (!trendPoints.length) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const scale = Math.min(3, window.devicePixelRatio || 1);
+        const x = (e.clientX - rect.left) * scale;
+        const index = trendPoints.reduce(
+          (best, p, n) =>
+            Math.abs(p.x - x) < Math.abs(trendPoints[best].x - x) ? n : best,
+          0,
+        );
+        const row = trendRows[index];
+        if (!row) return;
+        const tip = $("#trendTooltip");
+        tip.innerHTML = `<b>${esc(new Date(row.bucket).toLocaleString())}</b><br>${(+row.kwh).toFixed(3)} kWh<br>${row.avg_watts == null ? "—" : fmt(row.avg_watts)} W average<br><span class="muted">${row.samples} samples</span>`;
+        tip.style.display = "block";
+        tip.style.left =
+          Math.min(rect.width - 210, Math.max(8, e.clientX - rect.left + 14)) +
+          "px";
+        tip.style.top = Math.max(6, e.clientY - rect.top - 70) + "px";
+      });
+      $("#trend").addEventListener(
+        "pointerleave",
+        () => ($("#trendTooltip").style.display = "none"),
+      );
+
+      let resizeTimer = 0;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => draw(trendRows), 150);
+      });
+
+      /* ---------------- timers & schedules ---------------- */
+      async function loadTimers() {
+        const rows = await api("timers");
+        $("#timers").innerHTML = rows.length
+          ? '<div class="table-scroll"><table><tr><th>Plug</th><th>When</th><th>Action</th><th></th></tr>' +
+            rows
+              .map(
+                (t) =>
+                  `<tr><td>${esc(t.device_name)}${t.label ? ` <span class="muted">· ${esc(t.label)}</span>` : ""}</td><td>${esc(new Date(t.run_at).toLocaleString())}<div class="muted">${relative(t.run_at)}</div></td><td>${t.action === "on" ? "Turn on" : "Turn off"}</td><td><button class="danger small" type="button" onclick="deleteTimer(${t.id})">Cancel</button></td></tr>`,
+              )
+              .join("") +
+            "</table></div>"
+          : "No one-off timers queued.";
+      }
+
+      async function deleteTimer(id) {
+        try {
+          await api("timers/" + id, { method: "DELETE" });
+          toast("Timer cancelled.");
+          loadTimers();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      function describeDays(days) {
+        const list = String(days)
+          .split(",")
+          .filter((d) => d !== "")
+          .map(Number)
+          .sort((a, b) => a - b);
+        if (list.length === 7) return "Every day";
+        if (list.length === 5 && list.every((d) => d < 5)) return "Weekdays";
+        if (list.length === 2 && list[0] === 5 && list[1] === 6)
+          return "Weekends";
+        return list.map((d) => DAY_NAMES[d] ?? d).join(", ");
+      }
+
+      async function loadSchedules() {
+        const rows = await api("schedules");
+        $("#schedules").innerHTML = rows.length
+          ? '<div class="table-scroll"><table><tr><th>Plug</th><th>Days</th><th>Time</th><th>Action</th><th></th></tr>' +
+            rows
+              .map(
+                (s) =>
+                  `<tr><td>${esc(s.device_name)}</td><td>${esc(describeDays(s.days))}</td><td>${esc(s.at_time)}</td><td>${s.action === "on" ? "Turn on" : "Turn off"}</td><td><button class="danger small" type="button" onclick="deleteSchedule(${s.id},'${esc(s.device_name)}')">Delete</button></td></tr>`,
+              )
+              .join("") +
+            "</table></div>"
+          : '<p class="muted">No weekly schedules yet.</p>';
+      }
+
+      async function deleteSchedule(id, name) {
+        if (
+          !(await confirmAction({
+            title: "Delete schedule?",
+            body: `The weekly schedule for ${name} will be removed.`,
+          }))
+        )
+          return;
+        try {
+          await api("schedules/" + id, { method: "DELETE" });
+          toast("Schedule deleted.");
+          loadSchedules();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      function buildDayChips() {
+        $("#scheduleDays").innerHTML = DAY_NAMES.map(
+          (name, index) =>
+            // Deliberately unnamed: the chips are read by value when the form is
+            // submitted, and a named field would be posted as an unexpected extra.
+            `<label><input type="checkbox" value="${index}" ${index < 5 ? "checked" : ""}><span>${name}</span></label>`,
+        ).join("");
+      }
+
+      /* ---------------- views ---------------- */
+      async function showView(view) {
+        const settings = view === "settings";
+        $("#dashboardView").classList.toggle("hidden", settings);
+        $("#settingsBox").classList.toggle("hidden", !settings);
+        $("#dashboardTab").classList.toggle("active", !settings);
+        $("#settingsTab").classList.toggle("active", settings);
+        if (settings) {
+          await Promise.all([
+            loadSettings(),
+            loadDeviceAdmin(),
+            loadAutomationHistory(),
+          ]);
+        } else if (trendRows.length) {
+          draw(trendRows);
+        }
+      }
+
+      function showPanel(id) {
+        document
+          .querySelectorAll(".settings-panel")
+          .forEach((p) => p.classList.toggle("hidden", p.id !== id));
+        document
+          .querySelectorAll("[data-panel]")
+          .forEach((b) => b.classList.toggle("active", b.dataset.panel === id));
+      }
+
+      /* ---------------- settings ---------------- */
+      function syncTariffMode() {
+        const mode = $("#settingsForm").elements.tariff_mode.value;
+        $("#touFieldset").classList.toggle("hidden", mode !== "time_of_use");
+      }
+
+      function touRowHtml(period = {}) {
+        const selected = (period.days ?? [0, 1, 2, 3, 4]).map(Number);
+        return `<div class="tou-row card" style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end;margin-bottom:12px">
+          <label>Name<input class="tou-name" value="${esc(period.name ?? "Peak")}" maxlength="60"></label>
+          <label>From<input class="tou-start" type="time" value="${esc(period.start ?? "07:00")}"></label>
+          <label>To<input class="tou-end" type="time" value="${esc(period.end ?? "23:00")}"></label>
+          <label>Rate (c/kWh)<input class="tou-rate" type="number" step="0.01" min="0" value="${esc(period.rate_cents ?? 30)}"></label>
+          <div class="wide">
+            <span class="label">Days</span>
+            <div class="days tou-days" style="margin-top:5px">${DAY_NAMES.map(
+              (day, index) =>
+                `<label><input type="checkbox" value="${index}" ${selected.includes(index) ? "checked" : ""}><span>${day}</span></label>`,
+            ).join("")}</div>
+          </div>
+          <div><button class="secondary small" type="button" onclick="this.closest('.tou-row').remove()">Remove period</button></div>
+        </div>`;
+      }
+      function addTouRow(period) {
+        $("#touRows").insertAdjacentHTML("beforeend", touRowHtml(period));
+      }
+      function collectTouPeriods() {
+        return [...document.querySelectorAll(".tou-row")].map((row) => ({
+          name: row.querySelector(".tou-name").value.trim() || "Period",
+          start: row.querySelector(".tou-start").value,
+          end: row.querySelector(".tou-end").value,
+          rate_cents: +row.querySelector(".tou-rate").value,
+          days: [...row.querySelectorAll(".tou-days input:checked")].map(
+            (input) => +input.value,
+          ),
+        }));
+      }
+
+      async function loadSettings() {
+        const values = await api("settings");
+        settingsCache = values;
+        const form = $("#settingsForm");
+        for (const [key, value] of Object.entries(values)) {
+          const field = form.elements[key];
+          if (!field || key === "tou_periods") continue;
+          if (field.type === "checkbox") field.checked = !!value;
+          else field.value = value;
+        }
+        $("#retentionForm").elements.raw_retention_days.value =
+          values.raw_retention_days;
+        $("#touRows").innerHTML = "";
+        (values.tou_periods || []).forEach(addTouRow);
+        syncTariffMode();
+        if (!$("#timezones").children.length && Intl.supportedValuesOf) {
+          try {
+            $("#timezones").innerHTML = Intl.supportedValuesOf("timeZone")
+              .map((z) => `<option value="${esc(z)}"></option>`)
+              .join("");
+          } catch {
+            /* older browsers simply get a free-text field */
+          }
+        }
+      }
+
+      async function saveSettings(overrides = {}) {
+        const form = $("#settingsForm");
+        const payload = {
+          ...settingsCache,
+          ...Object.fromEntries(new FormData(form)),
+          ...overrides,
+        };
+        for (const key of [
+          "poll_interval_seconds",
+          "flat_rate_cents",
+          "raw_retention_days",
+          "alert_offline_minutes",
+          "sustained_load_minutes",
+          "sustained_load_percent",
+          "nominal_voltage",
+          "voltage_tolerance_percent",
+        ])
+          payload[key] = +payload[key];
+        payload.currency = String(payload.currency || "NZD").toUpperCase();
+        payload.alerts_enabled = form.elements.alerts_enabled.checked;
+        payload.gst_included = form.elements.gst_included.checked;
+        payload.tou_periods = collectTouPeriods();
+        if (overrides.raw_retention_days != null)
+          payload.raw_retention_days = +overrides.raw_retention_days;
+        settingsCache = await api("settings", {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        return settingsCache;
+      }
+
+      $("#settingsForm").onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await saveSettings();
+          toast("Settings saved.");
+          refresh();
+        } catch (err) {
+          toast(`Settings error: ${err.message}`, "error", 9000);
+        }
+      };
+
+      $("#retentionForm").onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await saveSettings({
+            raw_retention_days: e.target.elements.raw_retention_days.value,
+          });
+          toast("Retention saved.");
+        } catch (err) {
+          toast(`Could not save retention: ${err.message}`, "error", 9000);
+        }
+      };
+
+      async function archiveHistory() {
+        try {
+          const r = await api("maintenance/archive", { method: "POST" });
+          toast(
+            `${r.raw_readings_archived} raw readings rolled into hourly history.`,
+          );
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      async function restoreBackup() {
+        const file = $("#restoreFile").files[0];
+        if (!file) return toast("Choose a SQLite backup file first.", "warn");
+        if (
+          !(await confirmAction({
+            title: "Restore database?",
+            body: "This replaces all current settings, plugs, schedules and history.",
+            phrase: "RESTORE",
+          }))
+        )
+          return;
+        try {
+          const response = await fetch("/api/backup/restore?confirm=RESTORE", {
+            method: "POST",
+            headers: { "Content-Type": "application/vnd.sqlite3" },
+            body: file,
+          });
+          if (!response.ok) throw Error(await readError(response));
+          toast("Backup restored.");
+          await Promise.all([loadSettings(), loadDeviceAdmin()]);
+          refresh();
+        } catch (e) {
+          toast(`Restore failed: ${e.message}`, "error", 10000);
+        }
+      }
+
+      /* ---------------- device admin ---------------- */
+      async function loadDeviceAdmin() {
+        deviceConfigs = await api("devices?include_archived=true");
+        $("#deviceAdmin").innerHTML = deviceConfigs.length
+          ? deviceConfigs
+              .map(
+                (d) => `<div class="device">
+                  <div class="device-info">
+                    <div class="device-name">${esc(d.name)}${d.archived_at ? ' <span class="pill">Archived</span>' : ""}${d.enabled ? "" : ' <span class="pill">Disabled</span>'}</div>
+                    <div class="muted">${esc(d.ip_address)}:${d.tuya_port} <span class="dot">·</span> Tuya ${d.protocol_version} <span class="dot">·</span> W:${esc(d.watts_dps)} V:${esc(d.voltage_dps)} A:${esc(d.current_dps)} E:${esc(d.energy_dps)}${d.monthly_budget_cents != null ? ` <span class="dot">·</span> Budget ${money(d.monthly_budget_cents / 100)}` : ""}${d.max_watts != null ? ` <span class="dot">·</span> Limit ${d.max_watts} W` : ""}</div>
+                  </div>
+                  <div class="button-row">${
+                    d.archived_at
+                      ? `<button class="secondary small" type="button" onclick="archiveDevice(${d.id},false)">Restore</button><button class="danger small" type="button" onclick="purgeDevice(${d.id})">Delete permanently</button>`
+                      : `<button class="secondary small" type="button" onclick="inspectDps(${d.id})">Inspect channels</button><button class="secondary small" type="button" onclick="openEdit(${d.id})">Edit</button><button class="danger small" type="button" onclick="archiveDevice(${d.id},true)">Archive</button>`
+                  }</div>
+                </div>`,
+              )
+              .join("")
+          : '<p class="muted">No plugs configured yet.</p>';
+      }
+
+      function openEdit(id) {
+        const device = deviceConfigs.find((x) => x.id === id);
+        const form = $("#deviceEditForm");
+        if (!device) return;
+        for (const [key, value] of Object.entries(device)) {
+          const field = form.elements[key];
+          if (field && value != null)
+            field.value =
+              key === "enabled" ? (value ? "true" : "false") : value;
+        }
+        form.elements.id.value = id;
+        form.elements.local_key.value = "";
+        $("#deviceDialog").showModal();
+      }
+
+      async function openEditById(id) {
+        await showView("settings");
+        showPanel("panel-plugs");
+        openEdit(id);
+      }
+
+      $("#deviceEditForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const payload = Object.fromEntries(new FormData(form));
+        const id = payload.id;
+        // The row id is a form field, not a patchable column.
+        delete payload.id;
+        for (const key of [
+          "protocol_version",
+          "tuya_port",
+          "monthly_budget_cents",
+          "max_watts",
+          "power_scale",
+          "voltage_scale",
+          "current_scale",
+          "energy_scale",
+        ])
+          payload[key] = payload[key] === "" ? null : +payload[key];
+        payload.enabled = payload.enabled === "true";
+        if (!payload.local_key) delete payload.local_key;
+        try {
+          await api(`devices/${id}`, {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          });
+          $("#deviceDialog").close();
+          toast("Plug updated.");
+          await loadDeviceAdmin();
+          refresh();
+        } catch (err) {
+          toast(`Could not save plug: ${err.message}`, "error", 9000);
+        }
+      };
+
+      $("#deviceForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const payload = Object.fromEntries(new FormData(form));
+        const button = form.querySelector("button");
+        for (const key of [
+          "power_scale",
+          "voltage_scale",
+          "current_scale",
+          "energy_scale",
+          "tuya_port",
+        ])
+          payload[key] = +payload[key];
+        try {
+          button.disabled = true;
+          if (!payload.protocol_version) {
+            button.textContent = "Detecting protocol…";
+            const detected = await api("setup/detect-protocol", {
+              method: "POST",
+              body: JSON.stringify({
+                ip_address: payload.ip_address,
+                tuya_port: payload.tuya_port,
+                tuya_device_id: payload.tuya_device_id,
+                local_key: payload.local_key,
+              }),
+            });
+            payload.protocol_version = detected.protocol_version;
+          } else {
+            payload.protocol_version = +payload.protocol_version;
+          }
+          button.textContent = "Adding…";
+          await api("devices", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          form.reset();
+          toast(`${payload.name} added (Tuya ${payload.protocol_version}).`);
+          refresh();
+          loadDeviceAdmin();
+        } catch (err) {
+          toast(`Could not add plug: ${err.message}`, "error", 9000);
+        } finally {
+          button.disabled = false;
+          button.textContent = "Add plug";
+        }
+      };
+
+      async function archiveDevice(id, archived) {
+        const device = deviceConfigs.find((x) => x.id === id);
+        if (
+          archived &&
+          !(await confirmAction({
+            title: `Archive ${device.name}?`,
+            body: "Its history is retained and it can be restored later.",
+          }))
+        )
+          return;
+        try {
+          await api(`devices/${id}/archive?archived=${archived}`, {
+            method: "POST",
+          });
+          toast(archived ? "Plug archived." : "Plug restored.");
+          await loadDeviceAdmin();
+          refresh();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      async function purgeDevice(id) {
+        const device = deviceConfigs.find((x) => x.id === id);
+        if (
+          !(await confirmAction({
+            title: `Permanently delete ${device.name}?`,
+            body: "The plug and all of its recorded history will be destroyed. This cannot be undone.",
+            phrase: "PURGE",
+          }))
+        )
+          return;
+        try {
+          await api(`devices/${id}?confirm=PURGE`, { method: "DELETE" });
+          toast("Plug deleted.");
+          await loadDeviceAdmin();
+          refresh();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      /* ---------------- DPS inspector ---------------- */
+      const DPS_ROLES = [
+        ["", "— unassigned —"],
+        ["switch_dps", "Switch (on/off)"],
+        ["watts_dps", "Power (W)"],
+        ["voltage_dps", "Voltage (V)"],
+        ["current_dps", "Current (A)"],
+        ["energy_dps", "Energy total (kWh)"],
+      ];
+
+      async function inspectDps(id) {
+        const device =
+          deviceConfigs.find((x) => x.id === id) ||
+          devices.find((x) => x.id === id);
+        $("#dpsTable").innerHTML = '<p class="muted">Reading the plug…</p>';
+        $("#dpsDialog").showModal();
+        try {
+          const result = await api(`devices/${id}/dps`, { method: "POST" });
+          dpsContext = { id, result };
+          const decoded = result.decoded_with_current_mapping;
+          $("#dpsIntro").innerHTML =
+            `Live values from <b>${esc(device ? device.name : "the plug")}</b>. Current mapping decodes to <b>${decoded.watts == null ? "—" : fmt(decoded.watts)} W</b>, <b>${decoded.voltage == null ? "—" : fmt(decoded.voltage)} V</b>, <b>${decoded.amps == null ? "—" : fmt(decoded.amps, 3)} A</b>. Assign the channels that look right and apply.`;
+          $("#dpsTable").innerHTML =
+            "<table><tr><th>DPS</th><th>Raw value</th><th>Looks like</th><th>Assign to</th></tr>" +
+            result.channels
+              .map(
+                (c) =>
+                  `<tr><td class="dps-value">${esc(c.dps)}</td><td class="dps-value">${esc(JSON.stringify(c.value))}</td><td class="muted">${esc(c.looks_like || "—")}</td><td><select data-dps="${esc(c.dps)}">${DPS_ROLES.map(([v, label]) => `<option value="${v}" ${c.assigned_to && v.startsWith(c.assigned_to) ? "selected" : ""}>${esc(label)}</option>`).join("")}</select></td></tr>`,
+              )
+              .join("") +
+            "</table>";
+        } catch (e) {
+          $("#dpsTable").innerHTML = `<p class="offline">${esc(e.message)}</p>`;
+        }
+      }
+
+      async function applyDpsMapping() {
+        if (!dpsContext) return;
+        const payload = {};
+        document.querySelectorAll("#dpsTable select").forEach((select) => {
+          if (select.value) payload[select.value] = select.dataset.dps;
+        });
+        if (!Object.keys(payload).length)
+          return toast("Assign at least one channel first.", "warn");
+        try {
+          await api(`devices/${dpsContext.id}`, {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          });
+          $("#dpsDialog").close();
+          toast(
+            "Metering channels updated. Watch the next reading to confirm.",
+          );
+          await loadDeviceAdmin();
+          refresh();
+        } catch (e) {
+          toast(`Could not apply mapping: ${e.message}`, "error", 9000);
+        }
+      }
+
+      /* ---------------- cloud import ---------------- */
+      let cloudDevices = [];
+      $("#cloudForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = Object.fromEntries(new FormData(e.target));
+        if (!payload.api_device_id) delete payload.api_device_id;
+        $("#cloudResults").textContent = "Contacting Tuya Cloud…";
+        try {
+          cloudDevices = await api("setup/cloud-devices", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          renderCloud();
+          e.target.elements.api_secret.value = "";
+        } catch (err) {
+          $("#cloudResults").textContent =
+            `Could not load devices: ${err.message}`;
+        }
+      };
+
+      function renderCloud() {
+        $("#cloudResults").innerHTML = cloudDevices.length
+          ? cloudDevices
+              .map(
+                (d, i) => `<div class="device">
+                  <div class="device-info">
+                    <div class="device-name">${esc(d.name)}</div>
+                    <div class="muted">${esc(d.category || "Tuya device")} <span class="dot">·</span> ${esc(d.mac || "no MAC returned")}</div>
+                  </div>
+                  <div class="button-row">
+                    <label>LAN IP<input id="cloudIp${i}" placeholder="192.168.1.42"></label>
+                    <label class="inline"><input id="cloudRelay${i}" type="checkbox" onchange="toggleRelay(${i})"> Via host relay</label>
+                    <label class="hidden" id="cloudPortLabel${i}">Relay port<input id="cloudPort${i}" type="number" value="16668" min="1" max="65535"></label>
+                    <button id="cloudImport${i}" type="button" onclick="importCloud(${i})">Test &amp; import</button>
+                  </div>
+                </div>`,
+              )
+              .join("")
+          : "No linked devices with local keys were returned.";
+      }
+
+      function toggleRelay(i) {
+        const on = $("#cloudRelay" + i).checked;
+        $("#cloudPortLabel" + i).classList.toggle("hidden", !on);
+        $("#cloudIp" + i).placeholder = on
+          ? "relay host (e.g. host.docker.internal)"
+          : "192.168.1.42";
+      }
+
+      async function importCloud(i) {
+        const device = cloudDevices[i];
+        const relay = $("#cloudRelay" + i).checked;
+        const ip = $("#cloudIp" + i).value.trim();
+        const port = relay ? +$("#cloudPort" + i).value : 6668;
+        const host = relay ? ip || "host.docker.internal" : ip;
+        const button = $("#cloudImport" + i);
+        if (!host) return toast("Enter the plug's LAN IP first.", "warn");
+        try {
+          button.disabled = true;
+          button.textContent = "Testing…";
+          const detected = await api("setup/detect-protocol", {
+            method: "POST",
+            body: JSON.stringify({
+              ip_address: host,
+              tuya_port: port,
+              tuya_device_id: device.tuya_device_id,
+              local_key: device.local_key,
+            }),
+          });
+          await api("devices", {
+            method: "POST",
+            body: JSON.stringify({
+              name: device.name,
+              ip_address: host,
+              tuya_port: port,
+              tuya_device_id: device.tuya_device_id,
+              local_key: device.local_key,
+              protocol_version: detected.protocol_version,
+            }),
+          });
+          cloudDevices.splice(i, 1);
+          renderCloud();
+          toast(`${device.name} imported.`);
+          refresh();
+          loadDeviceAdmin();
+        } catch (err) {
+          toast(err.message, "error", 9000);
+          if (button.isConnected) {
+            button.disabled = false;
+            button.textContent = "Test & import";
+          }
+        }
+      }
+
+      /* ---------------- forms: timers & schedules ---------------- */
+      $("#timerForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = Object.fromEntries(new FormData(e.target));
+        payload.device_id = +payload.device_id;
+        payload.run_at = new Date(payload.run_at).toISOString();
+        if (!payload.label) delete payload.label;
+        try {
+          await api("timers", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          e.target.reset();
+          toast("Timer queued.");
+          loadTimers();
+        } catch (err) {
+          toast(`Could not add timer: ${err.message}`, "error", 9000);
+        }
+      };
+
+      $("#scheduleForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = Object.fromEntries(new FormData(e.target));
+        payload.device_id = +payload.device_id;
+        payload.days = [
+          ...document.querySelectorAll("#scheduleDays input:checked"),
+        ].map((input) => +input.value);
+        if (!payload.days.length)
+          return toast("Choose at least one day.", "warn");
+        try {
+          await api("schedules", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          toast("Schedule added.");
+          loadSchedules();
+        } catch (err) {
+          toast(`Could not add schedule: ${err.message}`, "error", 9000);
+        }
+      };
+
+      async function loadAutomationHistory() {
+        const rows = await api("automation-executions?limit=50");
+        $("#automationHistory").innerHTML = rows.length
+          ? '<div class="table-scroll"><table><tr><th>When</th><th>Type</th><th>Plug</th><th>Action</th><th>Result</th></tr>' +
+            rows
+              .map(
+                (x) =>
+                  `<tr><td>${esc(ago(x.created_at))}</td><td>${esc(x.kind)}</td><td>${esc(x.device_name)}</td><td>${x.action === "on" ? "Turn on" : "Turn off"}</td><td><span class="${x.status === "success" ? "online" : x.status === "failed" ? "offline" : "warning"}">${esc(x.status)}</span>${x.attempt > 1 ? ` <span class="muted">· attempt ${x.attempt}</span>` : ""}${x.message ? `<div class="muted">${esc(x.message)}</div>` : ""}</td></tr>`,
+              )
+              .join("") +
+            "</table></div>"
+          : "No automation attempts recorded yet.";
+      }
+
+      /* ---------------- boot ---------------- */
+      buildDayChips();
+      refresh();
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+    </script>
+  </body>
+</html>

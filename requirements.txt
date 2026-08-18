@@ -1,0 +1,7 @@
+fastapi==0.115.12
+starlette==0.46.2
+uvicorn[standard]==0.34.2
+tinytuya==1.16.0
+# Bundled IANA timezone database. Required on hosts without a system zoneinfo
+# (Windows, and slim base images), where every tariff lookup would otherwise fail.
+tzdata==2025.2
