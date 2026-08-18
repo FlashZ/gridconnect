@@ -62,6 +62,8 @@ so that the app, the container, the database and the environment variables all a
   and cleans up superseded caches.
 - Container `HEALTHCHECK`, image labels, and a `/api/health` `version` field.
 - `tests/test_api.py` covering the HTTP contract the dashboard depends on.
+- An About footer in Settings showing the running version, source, licence and a
+  support link. Text links only, so an offline LAN install makes no outbound request.
 
 ### Changed
 

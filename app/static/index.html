@@ -592,6 +592,27 @@
       .danger-zone {
         border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
       }
+      /* Deliberately quiet, and only ever shown inside Settings. Links are text
+         rather than remote badge images: this service must work on a LAN with no
+         internet access, and should not phone out on every settings visit. */
+      .about {
+        margin-top: 30px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .about a {
+        color: var(--muted);
+      }
+      .about a:hover,
+      .about a:focus-visible {
+        color: var(--ink);
+      }
 
       @media (max-width: 640px) {
         main {
@@ -1190,6 +1211,31 @@
             </p>
           </div>
         </div>
+
+        <footer class="about">
+          <span id="aboutVersion">GridConnect</span>
+          <span class="dot">·</span>
+          <a
+            href="https://github.com/FlashZ/gridconnect"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Source &amp; issues</a
+          >
+          <span class="dot">·</span>
+          <a
+            href="https://github.com/FlashZ/gridconnect/blob/main/LICENSE"
+            target="_blank"
+            rel="noopener noreferrer"
+            >MIT licence</a
+          >
+          <span class="dot">·</span>
+          <a
+            href="https://buymeacoffee.com/nickkb"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Buy me a coffee</a
+          >
+        </footer>
       </section>
     </main>
 
@@ -2034,6 +2080,7 @@
             loadSettings(),
             loadDeviceAdmin(),
             loadAutomationHistory(),
+            loadVersion(),
           ]);
         } else if (trendRows.length) {
           draw(trendRows);
@@ -2085,6 +2132,18 @@
             (input) => +input.value,
           ),
         }));
+      }
+
+      /* Report the running build, so a bug report can name a version. */
+      async function loadVersion() {
+        try {
+          const health = await api("health");
+          $("#aboutVersion").textContent = health.version
+            ? `GridConnect v${health.version}`
+            : "GridConnect";
+        } catch {
+          $("#aboutVersion").textContent = "GridConnect";
+        }
       }
 
       async function loadSettings() {
