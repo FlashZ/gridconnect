@@ -442,3 +442,11 @@ dashboard depends on (`tests/test_api.py`).
 | `relay.log`           | Windows relay activity log                            |
 
 The database and local configuration files are excluded by `.gitignore`.
+
+---
+
+
+## Support
+If you'd like to support my work:
+
+<a href="https://buymeacoffee.com/nickkb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
