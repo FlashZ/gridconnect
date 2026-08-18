@@ -9,3 +9,7 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# Import `app` from the repository root. Without this, a bare `pytest` fails to
+# collect while `python -m pytest` happens to work, because only the latter puts
+# the working directory on sys.path.
+pythonpath = ["."]
