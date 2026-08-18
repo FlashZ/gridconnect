@@ -1,19 +1,19 @@
 ARG BASE_IMAGE=python:3.12-slim
 FROM ${BASE_IMAGE}
 
-LABEL org.opencontainers.image.title="GridConnect" \
+LABEL org.opencontainers.image.title="Socketeer" \
       org.opencontainers.image.description="Local monitoring and control for Tuya smart plugs" \
-      org.opencontainers.image.source="https://github.com/FlashZ/gridconnect" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.source="https://github.com/FlashZ/socketeer" \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
-RUN id -u gridconnect >/dev/null 2>&1 || useradd --create-home --uid 10001 gridconnect; \
-    mkdir -p /data && chown gridconnect:gridconnect /data
-USER gridconnect
+RUN id -u socketeer >/dev/null 2>&1 || useradd --create-home --uid 10001 socketeer; \
+    mkdir -p /data && chown socketeer:socketeer /data
+USER socketeer
 VOLUME ["/data"]
 EXPOSE 8080
 

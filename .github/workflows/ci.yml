@@ -35,12 +35,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t gridconnect:ci .
+      - name: Validate the compose file interpolates
+        run: |
+          docker compose config >/dev/null
+          GRIDCONNECT_NETWORK_MODE=host docker compose config | grep -q "network_mode: host"
+          SOCKETEER_NETWORK_MODE=bridge GRIDCONNECT_NETWORK_MODE=host docker compose config | grep -q "network_mode: bridge"
+      - run: docker build -t socketeer:ci .
       - name: Smoke-test the image
         run: |
-          docker run -d --name gridconnect-ci -p 8080:8080 gridconnect:ci
+          docker run -d --name socketeer-ci -p 8080:8080 socketeer:ci
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8080/api/health; then exit 0; fi
             sleep 2
           done
-          echo "health endpoint never came up"; docker logs gridconnect-ci; exit 1
+          echo "health endpoint never came up"; docker logs socketeer-ci; exit 1

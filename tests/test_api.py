@@ -11,7 +11,7 @@ from app import main
 
 @pytest.fixture(autouse=True)
 def temporary_database(tmp_path, monkeypatch):
-    path = tmp_path / "gridconnect.db"
+    path = tmp_path / "socketeer.db"
     monkeypatch.setattr(db, "DB_PATH", str(path))
     monkeypatch.setattr(main, "DB_PATH", str(path))
     db.initialise()
@@ -45,7 +45,7 @@ def make_device(client, **overrides):
 
 def test_health_reports_service_and_version(client):
     body = client.get("/api/health").json()
-    assert body["service"] == "gridconnect"
+    assert body["service"] == "socketeer"
     assert body["version"]
 
 
@@ -143,7 +143,7 @@ def test_duplicate_tuya_device_is_rejected(client):
 def test_trends_csv_is_downloadable(client):
     response = client.get("/api/trends.csv?hours=24")
     assert response.status_code == 200
-    assert "gridconnect-trends.csv" in response.headers["content-disposition"]
+    assert "socketeer-trends.csv" in response.headers["content-disposition"]
     assert response.text.splitlines()[0] == "bucket,kwh,avg_watts,samples"
 
 
@@ -168,17 +168,17 @@ def test_static_assets_the_pwa_needs_are_served(client):
 
 def test_about_uses_project_defaults(client):
     body = client.get("/api/about").json()
-    assert body["name"] == "GridConnect"
+    assert body["name"] == "Socketeer"
     assert body["version"]
-    assert body["project_url"] == "https://github.com/FlashZ/gridconnect"
+    assert body["project_url"] == "https://github.com/FlashZ/socketeer"
     assert body["license_url"].endswith("/blob/main/LICENSE")
     assert body["support_url"].startswith("https://")
 
 
 def test_about_can_be_rebranded_by_a_fork(client, monkeypatch):
-    monkeypatch.setenv("GRIDCONNECT_PROJECT_NAME", "PlugWatch")
-    monkeypatch.setenv("GRIDCONNECT_PROJECT_URL", "https://example.org/plugwatch")
-    monkeypatch.setenv("GRIDCONNECT_SUPPORT_URL", "")
+    monkeypatch.setenv("SOCKETEER_PROJECT_NAME", "PlugWatch")
+    monkeypatch.setenv("SOCKETEER_PROJECT_URL", "https://example.org/plugwatch")
+    monkeypatch.setenv("SOCKETEER_SUPPORT_URL", "")
     body = client.get("/api/about").json()
     assert body["name"] == "PlugWatch"
     assert body["project_url"] == "https://example.org/plugwatch"
@@ -188,8 +188,44 @@ def test_about_can_be_rebranded_by_a_fork(client, monkeypatch):
 
 def test_about_rejects_a_non_http_url(client, monkeypatch):
     """These values are rendered as hrefs, so only http(s) may survive."""
-    monkeypatch.setenv("GRIDCONNECT_PROJECT_URL", "javascript:alert(1)")
-    monkeypatch.setenv("GRIDCONNECT_SUPPORT_URL", "data:text/html,<script>1</script>")
+    monkeypatch.setenv("SOCKETEER_PROJECT_URL", "javascript:alert(1)")
+    monkeypatch.setenv("SOCKETEER_SUPPORT_URL", "data:text/html,<script>1</script>")
     body = client.get("/api/about").json()
     assert body["project_url"] == ""
     assert body["support_url"] == ""
+
+
+def test_legacy_env_vars_still_work(monkeypatch):
+    """A deployment predating the rename must keep working untouched."""
+    monkeypatch.delenv("SOCKETEER_PROJECT_NAME", raising=False)
+    monkeypatch.setenv("GRIDCONNECT_PROJECT_NAME", "Legacy name")
+    assert db.env("PROJECT_NAME", "Socketeer") == "Legacy name"
+
+
+def test_new_env_var_wins_over_the_legacy_one(monkeypatch):
+    monkeypatch.setenv("GRIDCONNECT_PROJECT_NAME", "Old")
+    monkeypatch.setenv("SOCKETEER_PROJECT_NAME", "New")
+    assert db.env("PROJECT_NAME", "Socketeer") == "New"
+
+
+def test_an_explicitly_empty_value_beats_the_default(monkeypatch):
+    monkeypatch.setenv("SOCKETEER_SUPPORT_URL", "")
+    assert db.env("SUPPORT_URL", "https://example.org") == ""
+
+
+def test_a_pre_rename_database_is_adopted_rather_than_ignored(tmp_path, monkeypatch):
+    """Renaming must not strand an existing history behind a fresh empty file."""
+    monkeypatch.delenv("SOCKETEER_DB", raising=False)
+    monkeypatch.delenv("GRIDCONNECT_DB", raising=False)
+    # A directory of its own: the shared fixture already puts a socketeer.db in tmp_path.
+    data = tmp_path / "migration"
+    data.mkdir()
+    new, legacy = data / "socketeer.db", data / "gridconnect.db"
+    legacy.write_bytes(b"")
+    assert db.resolve_db_path(str(new), str(legacy)) == str(legacy)
+
+    # Once the new file exists it wins, and an explicit setting always wins.
+    new.write_bytes(b"")
+    assert db.resolve_db_path(str(new), str(legacy)) == str(new)
+    monkeypatch.setenv("SOCKETEER_DB", "/tmp/chosen.db")
+    assert db.resolve_db_path(str(new), str(legacy)) == "/tmp/chosen.db"

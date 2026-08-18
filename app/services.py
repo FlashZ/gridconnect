@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from . import database as db
 
-logger = logging.getLogger("gridconnect")
+logger = logging.getLogger("socketeer")
 
 
 def _float(value, scale):

@@ -10,7 +10,7 @@ from app import services
 
 @pytest.fixture(autouse=True)
 def temporary_database(tmp_path, monkeypatch):
-    path = tmp_path / "gridconnect.db"
+    path = tmp_path / "socketeer.db"
     monkeypatch.setattr(db, "DB_PATH", str(path))
     db.initialise()
     return path

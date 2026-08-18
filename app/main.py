@@ -40,7 +40,7 @@ from .services import (
 
 STATIC = Path(__file__).parent / "static"
 
-DEFAULT_PROJECT_URL = "https://github.com/FlashZ/gridconnect"
+DEFAULT_PROJECT_URL = "https://github.com/FlashZ/socketeer"
 DEFAULT_SUPPORT_URL = "https://buymeacoffee.com/nickkb"
 
 
@@ -52,19 +52,18 @@ def _safe_url(value: str) -> str:
 
 def about_links() -> dict:
     """Footer identity, overridable so a fork points at its own project and funding."""
-    project = _safe_url(os.getenv("GRIDCONNECT_PROJECT_URL", DEFAULT_PROJECT_URL))
+    project = _safe_url(db.env("PROJECT_URL", DEFAULT_PROJECT_URL))
     licence = _safe_url(
-        os.getenv("GRIDCONNECT_LICENSE_URL")
-        or (f"{project.rstrip('/')}/blob/main/LICENSE" if project else "")
+        db.env("LICENSE_URL") or (f"{project.rstrip('/')}/blob/main/LICENSE" if project else "")
     )
     return {
-        "name": os.getenv("GRIDCONNECT_PROJECT_NAME", "GridConnect").strip()[:60] or "GridConnect",
+        "name": db.env("PROJECT_NAME", "Socketeer").strip()[:60] or "Socketeer",
         "version": VERSION,
         "project_url": project,
         "license_url": licence,
         # A fork sets this to an empty string to drop the link entirely, rather
         # than soliciting on the upstream author's behalf.
-        "support_url": _safe_url(os.getenv("GRIDCONNECT_SUPPORT_URL", DEFAULT_SUPPORT_URL)),
+        "support_url": _safe_url(db.env("SUPPORT_URL", DEFAULT_SUPPORT_URL)),
     }
 
 
@@ -85,13 +84,13 @@ async def lifespan(app: FastAPI):
     await asyncio.gather(task, return_exceptions=True)
 
 
-app = FastAPI(title="GridConnect", version=VERSION, lifespan=lifespan)
+app = FastAPI(title="Socketeer", version=VERSION, lifespan=lifespan)
 
 
 @app.middleware("http")
 async def optional_basic_auth(request: Request, call_next):
     """Keep LAN access frictionless by default; opt into Basic auth through .env."""
-    password = os.getenv("GRIDCONNECT_AUTH_PASSWORD")
+    password = db.env("AUTH_PASSWORD")
     if not password or request.url.path in {
         "/api/health",
         "/manifest.webmanifest",
@@ -100,14 +99,12 @@ async def optional_basic_auth(request: Request, call_next):
     }:
         return await call_next(request)
     auth = request.headers.get("authorization", "")
-    expected = (
-        "Basic " + __import__("base64").b64encode(f"gridconnect:{password}".encode()).decode()
-    )
+    expected = "Basic " + __import__("base64").b64encode(f"socketeer:{password}".encode()).decode()
     if not secrets.compare_digest(auth, expected):
         return Response(
             "Authentication required",
             status_code=401,
-            headers={"WWW-Authenticate": 'Basic realm="GridConnect"'},
+            headers={"WWW-Authenticate": 'Basic realm="Socketeer"'},
         )
     if request.method not in {"GET", "HEAD", "OPTIONS"}:
         origin = request.headers.get("origin")
@@ -304,7 +301,7 @@ def health():
     return {
         "ok": True,
         "status": "healthy" if devices_online == devices_total else "degraded",
-        "service": "gridconnect",
+        "service": "socketeer",
         "version": VERSION,
         "devices_online": devices_online,
         "devices_total": devices_total,
@@ -643,14 +640,14 @@ async def check_budgets():
 def backup_database():
     if not Path(DB_PATH).exists():
         raise HTTPException(404, "No database exists yet")
-    handle, path = tempfile.mkstemp(prefix="gridconnect-backup-", suffix=".db")
+    handle, path = tempfile.mkstemp(prefix="socketeer-backup-", suffix=".db")
     os.close(handle)
     with sqlite3.connect(DB_PATH) as source, sqlite3.connect(path) as destination:
         source.backup(destination)
     return FileResponse(
         path,
         media_type="application/vnd.sqlite3",
-        filename="gridconnect-backup.db",
+        filename="socketeer-backup.db",
         background=BackgroundTask(os.unlink, path),
     )
 
@@ -662,7 +659,7 @@ async def restore_database(request: Request, confirm: str = ""):
         raise HTTPException(422, "Type RESTORE to confirm database replacement")
     directory = Path(DB_PATH).parent
     directory.mkdir(parents=True, exist_ok=True)
-    handle, temporary = tempfile.mkstemp(prefix="gridconnect-restore-", suffix=".db", dir=directory)
+    handle, temporary = tempfile.mkstemp(prefix="socketeer-restore-", suffix=".db", dir=directory)
     total = 0
     try:
         with os.fdopen(handle, "wb") as output:
@@ -680,7 +677,7 @@ async def restore_database(request: Request, confirm: str = ""):
             }
             integrity = candidate.execute("PRAGMA integrity_check").fetchone()[0]
         if not {"devices", "readings", "settings"}.issubset(tables) or integrity != "ok":
-            raise HTTPException(422, "That file is not a valid GridConnect backup")
+            raise HTTPException(422, "That file is not a valid Socketeer backup")
         async with app.state.poll_lock:
             with db.connection() as current:
                 current.execute("PRAGMA wal_checkpoint(TRUNCATE)")
@@ -757,5 +754,5 @@ def trends_csv(hours: int = 24, bucket: str = "auto", device_id: int | None = No
     return Response(
         output.getvalue(),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=gridconnect-trends.csv"},
+        headers={"Content-Disposition": "attachment; filename=socketeer-trends.csv"},
     )

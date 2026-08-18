@@ -1,4 +1,4 @@
-const CACHE = "gridconnect-v3";
+const CACHE = "socketeer-v1";
 const ASSETS = ["/", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

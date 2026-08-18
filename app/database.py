@@ -5,11 +5,44 @@ from contextlib import contextmanager, suppress
 from datetime import UTC, datetime
 from pathlib import Path
 
-DB_PATH = os.getenv("GRIDCONNECT_DB", "/data/gridconnect.db")
+LEGACY_PREFIX = "GRIDCONNECT"
+PREFIX = "SOCKETEER"
+
+
+def env(name: str, default: str = "") -> str:
+    """Read SOCKETEER_<name>, falling back to the pre-rename GRIDCONNECT_<name>.
+
+    Deployments that predate the rename keep working without editing their .env.
+    A variable that is set but empty wins over the default, so a deployment can
+    switch something off (an optional link, a password) by blanking it.
+    """
+    for key in (f"{PREFIX}_{name}", f"{LEGACY_PREFIX}_{name}"):
+        if key in os.environ:
+            return os.environ[key]
+    return default
+
+
+def resolve_db_path(
+    default: str = "/data/socketeer.db", legacy: str = "/data/gridconnect.db"
+) -> str:
+    """Pick the database file, adopting a pre-rename one rather than starting empty.
+
+    Upgrading across the rename must not strand an existing history behind a new,
+    empty file, so the old name is used when it is the only one present.
+    """
+    configured = env("DB")
+    if configured:
+        return configured
+    if not Path(default).exists() and Path(legacy).exists():
+        return legacy
+    return default
+
+
+DB_PATH = resolve_db_path()
 
 DEFAULT_SETTINGS = {
     "poll_interval_seconds": 10,
-    "timezone": os.getenv("GRIDCONNECT_TIMEZONE", "Pacific/Auckland"),
+    "timezone": env("TIMEZONE", "Pacific/Auckland") or "Pacific/Auckland",
     "currency": "NZD",
     "tariff_mode": "flat",
     "flat_rate_cents": 30.0,

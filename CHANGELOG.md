@@ -1,12 +1,29 @@
 # Changelog
 
-All notable changes to GridConnect are documented here.
+All notable changes to Socketeer are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [1.0.0] - 2026-08-18
 
-First packaged release. The project is renamed from *Arlec Plug Monitor* to **GridConnect**
-so that the app, the container, the database and the environment variables all agree.
+First packaged release, published as **Socketeer** under the **AGPL-3.0-or-later** licence.
+
+The project was previously called *Arlec Plug Monitor*, and briefly *GridConnect*. It is
+named Socketeer to avoid trading on Arlec's "Grid Connect" product brand, which this
+project is not affiliated with.
+
+### Upgrading from a GridConnect checkout
+
+Nothing needs to be edited by hand:
+
+- `GRIDCONNECT_*` environment variables are still read; `SOCKETEER_*` takes precedence.
+- An existing `/data/gridconnect.db` is adopted automatically when no `socketeer.db` is
+  present, so history and settings carry over.
+- The container is renamed from `gridconnect-energy` to `socketeer`. Run
+  `docker compose down` before `docker compose up -d --build` so the old container
+  releases port 8080.
+- `GET /api/health` now reports `"service": "socketeer"` — **update uptime monitors that
+  match on that string.**
+- Basic-auth username changes from `gridconnect` to `socketeer`.
 
 ### Fixed
 
@@ -64,15 +81,15 @@ so that the app, the container, the database and the environment variables all a
 - `tests/test_api.py` covering the HTTP contract the dashboard depends on.
 - An About footer in Settings showing the running version, source, licence and a
   support link. Text links only, so an offline LAN install makes no outbound request.
-- `GET /api/about`, with `GRIDCONNECT_PROJECT_NAME`/`_URL`, `_LICENSE_URL` and
+- `GET /api/about`, with `SOCKETEER_PROJECT_NAME`/`_URL`, `_LICENSE_URL` and
   `_SUPPORT_URL` overrides, so a fork points the footer at its own project and funding
   rather than upstream. Only http(s) values are accepted.
 
 ### Changed
 
-- `GET /api/health` reports `"service": "gridconnect"` (previously `"arlec-plug-monitor"`).
+- `GET /api/health` reports `"service": "socketeer"` (previously `"arlec-plug-monitor"`).
   **Update any uptime monitor that matches on this string.**
-- CSV export is now named `gridconnect-trends.csv`, backups `gridconnect-backup.db`.
+- CSV export is now named `socketeer-trends.csv`, backups `socketeer-backup.db`.
 - The dashboard keeps the last good data on screen during a connection failure and backs off
   its retries, instead of replacing the device list with an error string.
 - Polling pauses while the browser tab is hidden.

@@ -1,8 +1,8 @@
-# GridConnect
+# Socketeer
 
-GridConnect is a small, local-first dashboard for Tuya-derived smart plugs, including compatible Arlec Grid Connect devices sold in Australia and New Zealand. It polls plugs directly over the LAN, stores energy history in SQLite, provides local on/off control and schedules, and estimates plug energy costs without Home Assistant or an ongoing cloud subscription.
+Socketeer is a small, local-first dashboard for Tuya-derived smart plugs, including compatible Arlec Grid Connect devices sold in Australia and New Zealand. It polls plugs directly over the LAN, stores energy history in SQLite, provides local on/off control and schedules, and estimates plug energy costs without Home Assistant or an ongoing cloud subscription.
 
-![The GridConnect dashboard: live load and cost tiles, a sustained-load alert on an EV charger, a 24-hour energy chart, and per-plug readings with load bars against each plug's watt limit.](docs/dashboard.png)
+![The Socketeer dashboard: live load and cost tiles, a sustained-load alert on an EV charger, a 24-hour energy chart, and per-plug readings with load bars against each plug's watt limit.](docs/dashboard.png)
 
 The device integration is built on the open-source [TinyTuya](https://github.com/jasonacox/tinytuya) Python library. TinyTuya provides the local Tuya LAN communication and Tuya Cloud setup calls used for device polling, control, protocol detection, and credential import. This project adds the Docker service, SQLite history, tariff calculations, automations, monitoring APIs, and browser dashboard around it.
 
@@ -12,7 +12,7 @@ Grid Connect, or Tuya.
 > **Safety note.** Consumer smart plugs carry a peak rating (commonly 10 A / 2400 W) that
 > is not the same as a continuous rating. Running one near its limit for hours — EV
 > charging, heaters, dryers — heats the plug and its contacts, and heat is a common cause
-> of both plug failure and the Wi-Fi module dropping offline. GridConnect can warn you
+> of both plug failure and the Wi-Fi module dropping offline. Socketeer can warn you
 > about this (see **Sustained heavy load** below), but a warning is not a substitute for
 > using equipment within its rating. Check the plug manufacturer's guidance before using
 > a smart plug for a high continuous load.
@@ -60,9 +60,9 @@ These instructions work without modification on normal Linux Docker hosts, Unrai
 3. Edit `.env` and set the timezone if required:
 
    ```dotenv
-   GRIDCONNECT_TIMEZONE=Pacific/Auckland
-   GRIDCONNECT_NETWORK_MODE=bridge
-   GRIDCONNECT_AUTH_PASSWORD=
+   SOCKETEER_TIMEZONE=Pacific/Auckland
+   SOCKETEER_NETWORK_MODE=bridge
+   SOCKETEER_AUTH_PASSWORD=
    ```
 
 4. From the project directory, build and start the service:
@@ -74,7 +74,7 @@ These instructions work without modification on normal Linux Docker hosts, Unrai
 5. Open `http://HOST-IP:8080`. On the same machine, use `http://localhost:8080`.
 6. Open **Settings & devices**, configure the tariff, and add the first plug.
 
-Persistent data is stored in `./data/gridconnect.db`. The container can be rebuilt or replaced without losing configuration or readings as long as the `data` directory is retained.
+Persistent data is stored in `./data/socketeer.db`. The container can be rebuilt or replaced without losing configuration or readings as long as the `data` directory is retained.
 
 ### Common Docker commands
 
@@ -83,7 +83,7 @@ Persistent data is stored in `./data/gridconnect.db`. The container can be rebui
 docker compose ps
 
 # Follow logs
-docker compose logs -f gridconnect-energy
+docker compose logs -f socketeer
 
 # Rebuild after an update
 docker compose up --build -d
@@ -99,12 +99,12 @@ docker compose down
 Regular Docker bridge networking should be sufficient. Keep:
 
 ```dotenv
-GRIDCONNECT_NETWORK_MODE=bridge
+SOCKETEER_NETWORK_MODE=bridge
 ```
 
 Publish container port `8080`, mount a persistent directory at `/data`, and make sure the host firewall permits connections to the plugs on TCP `6668`.
 
-If a particular Linux network setup prevents bridge containers from reaching LAN clients, `GRIDCONNECT_NETWORK_MODE=host` is a simple fallback. Host networking is normally unnecessary.
+If a particular Linux network setup prevents bridge containers from reaching LAN clients, `SOCKETEER_NETWORK_MODE=host` is a simple fallback. Host networking is normally unnecessary.
 
 For NAS application screens that do not use Compose, use these equivalent values:
 
@@ -114,8 +114,8 @@ For NAS application screens that do not use Compose, use these equivalent values
 | Container port   | `8080/tcp`                              |
 | Host port        | `8080`                                  |
 | Persistent mount | Host folder mapped to `/data`           |
-| Timezone         | `GRIDCONNECT_TIMEZONE=Pacific/Auckland` |
-| Database         | `GRIDCONNECT_DB=/data/gridconnect.db`   |
+| Timezone         | `SOCKETEER_TIMEZONE=Pacific/Auckland` |
+| Database         | `SOCKETEER_DB=/data/socketeer.db`   |
 | Restart policy   | `unless-stopped`                        |
 
 The Python base image and application support both `amd64` and `arm64` Docker hosts.
@@ -128,7 +128,7 @@ Some Windows Wi-Fi, router, and Docker Desktop combinations allow Windows itself
 
 ```powershell
 Test-NetConnection 192.168.1.42 -Port 6668
-docker exec gridconnect-energy python -c "import socket; socket.create_connection(('192.168.1.42', 6668), 3); print('reachable')"
+docker exec socketeer python -c "import socket; socket.create_connection(('192.168.1.42', 6668), 3); print('reachable')"
 ```
 
 Replace `192.168.1.42` with the plug's reserved address. If Windows succeeds but the container fails, use the included Windows TCP relay described below.
@@ -211,7 +211,7 @@ Test-NetConnection localhost -Port 16668
 From the container:
 
 ```powershell
-docker exec gridconnect-energy python -c "import socket; socket.create_connection(('host.docker.internal', 16668), 3); print('relay reachable')"
+docker exec socketeer python -c "import socket; socket.create_connection(('host.docker.internal', 16668), 3); print('relay reachable')"
 ```
 
 If the relay is reachable but the plug remains offline, verify the target IP, confirm the plug is connected to Wi-Fi, and check whether re-pairing changed its local key.
@@ -231,7 +231,7 @@ For Tuya Smart or Smart Life devices, link the app account to a Tuya IoT Platfor
 
 Removing and re-pairing a plug normally changes its local key. Update the saved device if it suddenly stops authenticating.
 
-Never publish local keys, `relay-config.json`, `.env`, or `data/gridconnect.db`.
+Never publish local keys, `relay-config.json`, `.env`, or `data/socketeer.db`.
 
 ## Adding a device
 
@@ -302,17 +302,17 @@ than upstream. Set any value to an empty string to drop that link.
 
 | Variable                   | Default                                     |
 | -------------------------- | ------------------------------------------- |
-| `GRIDCONNECT_PROJECT_NAME` | `GridConnect`                               |
-| `GRIDCONNECT_PROJECT_URL`  | this repository                             |
-| `GRIDCONNECT_LICENSE_URL`  | `<project url>/blob/main/LICENSE`           |
-| `GRIDCONNECT_SUPPORT_URL`  | the upstream author's Buy Me a Coffee page  |
+| `SOCKETEER_PROJECT_NAME` | `Socketeer`                               |
+| `SOCKETEER_PROJECT_URL`  | this repository                             |
+| `SOCKETEER_LICENSE_URL`  | `<project url>/blob/main/LICENSE`           |
+| `SOCKETEER_SUPPORT_URL`  | the upstream author's Buy Me a Coffee page  |
 
 Only `http://` and `https://` values are accepted; anything else is discarded, since
 these are rendered as links in the dashboard. `GET /api/about` returns the resolved set.
 
 ## Alerts
 
-GridConnect raises alerts on the dashboard and keeps them open until the condition clears.
+Socketeer raises alerts on the dashboard and keeps them open until the condition clears.
 
 | Alert                    | Raised when                                                                 |
 | ------------------------ | --------------------------------------------------------------------------- |
@@ -388,10 +388,10 @@ For Uptime Kuma, monitor `http://HOST-IP:8080/api/health`. HTTP `200` means the 
 This is a LAN-first service and does not enable authentication by default. To require a password, set:
 
 ```dotenv
-GRIDCONNECT_AUTH_PASSWORD=replace-with-a-long-random-password
+SOCKETEER_AUTH_PASSWORD=replace-with-a-long-random-password
 ```
 
-The username is `gridconnect`. Basic authentication should only be used on a trusted LAN or behind an HTTPS reverse proxy. Do not expose port `8080` directly to the public internet.
+The username is `socketeer`. Basic authentication should only be used on a trusted LAN or behind an HTTPS reverse proxy. Do not expose port `8080` directly to the public internet.
 
 The unauthenticated health endpoint remains available for monitoring. Device local keys are stored in SQLite and are never returned by normal device-list APIs.
 
@@ -427,7 +427,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
 npm install
-$env:GRIDCONNECT_DB = ".\data\gridconnect.db"
+$env:SOCKETEER_DB = ".\data\socketeer.db"
 uvicorn app.main:app --reload --port 8080
 ```
 
@@ -444,6 +444,17 @@ npm run format:check
 `pytest` covers both the service layer (`tests/test_services.py`) and the HTTP contract the
 dashboard depends on (`tests/test_api.py`).
 
+## Licence
+
+Socketeer is licensed under the **GNU Affero General Public License v3.0 or later**
+(see [LICENSE](LICENSE)).
+
+In practice, for a self-hosted tool: you may run, modify and share it freely. If you
+distribute a modified version, or run one as a network service that other people use,
+you must make your modified source available to those users under the same licence.
+The Settings footer links to the source for exactly this reason — if you deploy a fork,
+point `SOCKETEER_PROJECT_URL` at your own repository so that link stays truthful.
+
 ## Acknowledgements
 
 - [TinyTuya](https://github.com/jasonacox/tinytuya) supplies the Python implementation used to communicate with Tuya-compatible devices over the local network and during the optional cloud-assisted setup flow.
@@ -453,7 +464,7 @@ dashboard depends on (`tests/test_api.py`).
 
 | Path                  | Contents                                              |
 | --------------------- | ----------------------------------------------------- |
-| `data/gridconnect.db` | SQLite settings, credentials, schedules, and readings |
+| `data/socketeer.db` | SQLite settings, credentials, schedules, and readings |
 | `.env`                | Deployment environment and optional password          |
 | `relay-config.json`   | Windows TCP relay routes; not required elsewhere      |
 | `relay.log`           | Windows relay activity log                            |

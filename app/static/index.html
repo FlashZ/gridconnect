@@ -13,7 +13,7 @@
     />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-    <title>GridConnect</title>
+    <title>Socketeer</title>
     <style>
       :root {
         --ink: #edf4f5;
@@ -656,7 +656,7 @@
     <main>
       <header>
         <div>
-          <h1>GridConnect</h1>
+          <h1>Socketeer</h1>
           <p class="sub">
             Local control, energy history and tariff-aware costs for your smart
             plugs.
@@ -1204,7 +1204,7 @@
           <div class="card">
             <p class="muted" style="margin: 0">
               To require a browser password, set
-              <code>GRIDCONNECT_AUTH_PASSWORD</code> in the server's
+              <code>SOCKETEER_AUTH_PASSWORD</code> in the server's
               <code>.env</code> and restart the container. Leave it unset for
               trusted-LAN access. The <code>/api/health</code> endpoint stays
               public so uptime monitors keep working.
@@ -1495,13 +1495,13 @@
       }
       function cycleTheme() {
         const order = ["system", "light", "dark"];
-        const current = localStorage.getItem("gc-theme") || "system";
+        const current = localStorage.getItem("socketeer-theme") || "system";
         const next = order[(order.indexOf(current) + 1) % order.length];
-        localStorage.setItem("gc-theme", next);
+        localStorage.setItem("socketeer-theme", next);
         applyTheme(next);
         if (trendRows.length) draw(trendRows);
       }
-      applyTheme(localStorage.getItem("gc-theme") || "system");
+      applyTheme(localStorage.getItem("socketeer-theme") || "system");
 
       /* ---------------- alert presentation ---------------- */
       const ALERT_LABELS = {
@@ -1601,7 +1601,7 @@
             const meta = alertMeta(a.kind);
             return `<div class="alert sev-${meta.severity}">
               <div class="alert-body">
-                <b>${esc(a.device_name || "GridConnect")} · ${esc(meta.text)}</b>
+                <b>${esc(a.device_name || "Socketeer")} · ${esc(meta.text)}</b>
                 <div class="muted">${esc(a.message)}</div>
                 <div class="muted">${relative(a.created_at)} · ${ago(a.created_at)}</div>
               </div>
@@ -1695,7 +1695,7 @@
           $("#freshness").className = "pill bad";
           // Leave the last good dashboard on screen rather than blanking it.
           setConnectionError(
-            `Could not reach GridConnect: ${e.message || e}. Showing the last known values and retrying.`,
+            `Could not reach Socketeer: ${e.message || e}. Showing the last known values and retrying.`,
           );
         } finally {
           const delay = Math.min(
@@ -2119,11 +2119,11 @@
         try {
           about = await api("about");
         } catch {
-          footer.innerHTML = '<span class="muted">GridConnect</span>';
+          footer.innerHTML = '<span class="muted">Socketeer</span>';
           return;
         }
         const parts = [
-          `<span>${esc(about.name || "GridConnect")}${about.version ? ` v${esc(about.version)}` : ""}</span>`,
+          `<span>${esc(about.name || "Socketeer")}${about.version ? ` v${esc(about.version)}` : ""}</span>`,
         ];
         const links = [
           [about.project_url, "Source &amp; issues"],
